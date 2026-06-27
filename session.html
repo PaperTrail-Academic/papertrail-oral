@@ -152,7 +152,10 @@
     <div id="done-banner" class="panel card center hide"><div class="pad">
       <div class="big-emoji">✓</div>
       <h2>Defense complete</h2>
-      <p>That’s everything — you can close this page. Your teacher will be able to listen to your answers.</p>
+      <p>That’s everything — your answers have been sent to your teacher.</p>
+      <p><b>You can close this window now.</b></p>
+      <button class="btn-begin" id="closeBtn" style="margin-top:18px">Close this window</button>
+      <p class="hint" id="closeHint"></p>
     </div></div>
   </main>
 
@@ -175,7 +178,7 @@ const SUPABASE_URL = "https://ktzrdhiqhidexunucuqp.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0enJkaGlxaGlkZXh1bnVjdXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTQ2ODMsImV4cCI6MjA4ODE5MDY4M30.24Gbyh0C-wbDqQ31MD-ttXoCfLwjcWvjs9-UXAaqmHU";
 const FN = SUPABASE_URL + "/functions/v1";
 
-const READ_SECONDS = 7;       // read window before recording starts
+const READ_SECONDS = 12;      // read window before recording starts (10–15 feels fair)
 const MAX_ANSWER_SECONDS = 180; // auto-stop cap to bound file size
 
 function readToken(){
@@ -265,7 +268,16 @@ async function loadSession(){
   if(cursor===-1){ finish(); } else { renderIdle(); }
 }
 
-function finish(){ els.stage.classList.add("hide"); show(els.doneBanner); }
+function finish(){
+  els.stage.classList.add("hide"); show(els.doneBanner);
+  els.doneBanner.scrollIntoView({behavior:"smooth", block:"center"});
+  const b=el("closeBtn");
+  if(b) b.onclick=()=>{
+    window.close();
+    // window.close() is a no-op for tabs the script didn't open
+    el("closeHint").textContent="If this tab didn’t close, you can close it yourself — you’re all done.";
+  };
+}
 
 function renderIdle(){
   const n = cursor+1;
