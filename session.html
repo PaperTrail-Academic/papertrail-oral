@@ -68,6 +68,8 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
   .rectime{font-variant-numeric:tabular-nums; font-weight:700; color:var(--warn); font-size:1.15rem;}
   .reclabel{color:var(--muted); font-size:.9rem;}
+  .caphint{color:var(--muted); font-size:.88rem; margin-top:8px; min-height:1.1em;}
+  .caphint.warn{color:var(--warn); font-weight:600;}
 
   button{font-family:inherit; font-size:1rem; font-weight:600; border-radius:10px; cursor:pointer;
     border:1px solid transparent; padding:13px 20px; transition:background .15s, border-color .15s, opacity .15s;
@@ -129,6 +131,7 @@
       <ul class="rules">
         <li>You’ll answer <b id="rules-n">several</b> questions, <b>one at a time</b>.</li>
         <li>You won’t see a question until you press <b>Begin</b>. Then you get <b id="rules-read">7</b> seconds to read it, and <b>recording starts automatically</b>.</li>
+        <li>Each answer can run up to <b>2 minutes</b>, then it stops on its own — no need to fill the time.</li>
         <li><b>One take per question</b> — there are no re-records. Just talk it through in your own words; this isn’t a memory test.</li>
         <li>Your essay is below for reference the whole time.</li>
       </ul>
@@ -179,7 +182,7 @@ const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const FN = SUPABASE_URL + "/functions/v1";
 
 const READ_SECONDS = 12;      // read window before recording starts (10–15 feels fair)
-const MAX_ANSWER_SECONDS = 180; // auto-stop cap to bound file size
+const MAX_ANSWER_SECONDS = 120; // 2-min auto-stop cap — authorship answers stay concise; also bounds file size
 
 function readToken(){
   const q = new URLSearchParams(location.search).get("token");
@@ -334,14 +337,21 @@ function startRecording(){
       <span class="recdot"></span><span class="rectime" id="rt">0:00</span>
       <span class="reclabel">Recording — speak your answer.</span>
     </div>
+    <div class="caphint" id="caphint">Up to ${fmt(MAX_ANSWER_SECONDS)} per answer.</div>
     <button class="btn-done" id="doneBtn">Done — submit answer</button>
     <p class="hint">One take. Submitting locks this answer and moves you on.</p>
     <div class="status" id="stStatus"></div>`;
   els.stageBody.querySelector(".qtext").textContent=q.question;
 
   let secs=0;
-  const rt=el("rt");
+  const rt=el("rt"), caphint=el("caphint");
+  const WARN_AT=20; // surface a visible countdown only in the final seconds before auto-stop
   const timer=setInterval(()=>{ secs++; if(rt) rt.textContent=fmt(secs);
+    const remaining=MAX_ANSWER_SECONDS-secs;
+    if(caphint){
+      if(remaining<=WARN_AT && remaining>0){ caphint.textContent="Auto-stops in "+remaining+"s — wrap up your answer."; caphint.className="caphint warn"; }
+      else if(remaining>WARN_AT){ caphint.className="caphint"; }
+    }
     if(secs>=MAX_ANSWER_SECONDS){ stop(); } },1000);
 
   let stopped=false;
