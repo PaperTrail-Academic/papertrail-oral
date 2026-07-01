@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>PaperTrail Oral — Report</title>
+<link rel="icon" href="https://papertrailacademic.com/icon128.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --blue:#4A6FA5; --gold:#C9A84C; --teal:#2a7a6b; --ink:#1a2235;
+    --teal-dark:#1f5a4f; --bg:#f6f7f9; --card:#ffffff; --line:#e5e8ee;
+    --muted:#5b6472; --warn:#b4452f;
+    --shadow:0 1px 3px rgba(26,34,53,.06), 0 6px 20px rgba(26,34,53,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"DM Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.6; -webkit-font-smoothing:antialiased;}
+  a{color:var(--teal)}
+  .wrap{max-width:760px; margin:0 auto; padding:22px 18px 90px;}
+  header.site{display:flex; align-items:center; gap:10px; padding:6px 0 16px; justify-content:space-between;}
+  header.site .brand{display:flex; align-items:center; gap:10px;}
+  header.site img{width:30px; height:30px; border-radius:6px;}
+  header.site .name{font-family:"Lora",serif; font-weight:700; font-size:1.05rem;}
+  header.site .name span{color:var(--teal);}
+  .back{font-size:.85rem; color:var(--muted); text-decoration:none;}
+  .back:hover{color:var(--ink);}
+
+  .btn{font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line);
+    background:#fff; color:var(--ink); padding:9px 14px; font-weight:600;}
+  .btn:hover{background:#f4f6f9;}
+  .btn.primary{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .btn.primary:hover{background:var(--teal-dark);}
+  .btn.small{padding:6px 11px; font-size:.85rem; border-radius:9px;}
+  .btn:disabled{opacity:.55; cursor:default;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); margin:0 0 16px;}
+  .pad{padding:20px 22px;}
+  .rule{height:3px; width:54px; background:var(--gold); border-radius:3px; margin:0 0 14px;}
+  h1{font-family:"Lora",serif; font-weight:700; font-size:1.55rem; line-height:1.25; margin:.1em 0 .35em;}
+  .metaline{color:var(--muted); font-size:.9rem; margin:0;}
+  .metaline b{color:var(--ink); font-weight:600;}
+
+  .actions{display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 4px;}
+
+  .section-label{font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; color:var(--teal-dark);
+    font-weight:700; margin:0 0 10px;}
+  .overall{font-size:1.02rem;}
+
+  /* marker legend */
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:.82rem; color:var(--muted); margin:2px 0 0;}
+  .legend .lg{display:flex; align-items:center; gap:6px;}
+  .sym{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:6px; font-weight:700; font-size:.9rem; line-height:1;}
+  .m-ok .sym,.sym.m-ok{background:#eaf4f0; color:var(--teal-dark); border:1px solid #cfe6dd;}
+  .m-thin .sym,.sym.m-thin{background:#fbf6e8; color:#8a6d1f; border:1px solid #ecdcae;}
+  .m-flag .sym,.sym.m-flag{background:#fbecea; color:var(--warn); border:1px solid #f0cfc8;}
+  .m-none .sym,.sym.m-none{background:#f1f3f6; color:#6a7382; border:1px solid #e0e4ea;}
+
+  /* question cards */
+  .q{border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:var(--shadow); margin:0 0 12px; overflow:hidden;}
+  .q .qhead{display:flex; gap:12px; align-items:flex-start; padding:16px 18px;}
+  .q .qhead .qn{font-size:.78rem; font-weight:700; color:var(--muted); letter-spacing:.05em; padding-top:3px; white-space:nowrap;}
+  .q .qtext{flex:1; font-family:"Lora",serif; font-weight:600; font-size:1.08rem; line-height:1.4;}
+  .chip{display:inline-flex; align-items:center; gap:7px; padding:5px 11px; border-radius:999px;
+    font-size:.8rem; font-weight:700; white-space:nowrap;}
+  .chip.m-ok{background:#eaf4f0; color:var(--teal-dark); border:1px solid #cfe6dd;}
+  .chip.m-thin{background:#fbf6e8; color:#8a6d1f; border:1px solid #ecdcae;}
+  .chip.m-flag{background:#fbecea; color:var(--warn); border:1px solid #f0cfc8;}
+  .chip.m-none{background:#f1f3f6; color:#6a7382; border:1px solid #e0e4ea;}
+  .q .qbody{padding:0 18px 16px; }
+  .evidence{color:#33404f; margin:0 0 10px;}
+  .askabout{background:#f8faf9; border:1px solid #e2ece8; border-radius:9px; padding:10px 12px;
+    font-size:.92rem; color:var(--teal-dark); margin:0 0 12px;}
+  .askabout b{color:var(--teal-dark);}
+  .transcript{border-left:3px solid var(--line); padding:2px 0 2px 14px; margin:8px 0 0; color:#3a4657;}
+  .transcript .tlabel{font-size:.76rem; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); font-weight:700; margin:0 0 3px;}
+  .transcript .ttext{white-space:pre-wrap; font-size:.96rem;}
+  .tnote{font-size:.78rem; color:#9aa2ae; margin:6px 0 0;}
+  .audiowrap{margin:12px 0 0;}
+  .audiowrap audio{width:100%; margin-top:4px;}
+  .audio-gone{font-size:.85rem; color:#9aa2ae; font-style:italic;}
+  .noanswer{color:#8a93a3; font-style:italic; margin:0;}
+
+  /* follow-up */
+  .followup.suggested{border-left:4px solid var(--gold);}
+  .followup .fnote{font-size:1.02rem; margin:0 0 8px;}
+  .refs{margin:8px 0 0; padding:0; list-style:none;}
+  .refs li{padding:8px 0; border-top:1px solid var(--line); font-size:.95rem;}
+  .refs li:first-child{border-top:none;}
+  .refs .rq{font-weight:600;}
+
+  .disclaimer{background:#f7f8fa; border:1px dashed #d7dce4; border-radius:12px; padding:14px 16px;
+    color:var(--muted); font-size:.9rem;}
+
+  .state{max-width:460px; margin:8vh auto 0; text-align:center; color:var(--muted);}
+  .state h1{font-size:1.3rem;}
+
+  /* inline sign-in (email link may land unauthenticated) */
+  .field{margin:0 0 12px; text-align:left;}
+  .field label{display:block; font-size:.85rem; font-weight:600; margin:0 0 5px;}
+  .field input{width:100%; font:inherit; padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:#fbfbfc;}
+  .field input:focus{outline:2px solid #cfe0db; border-color:var(--teal);}
+  .or{display:flex; align-items:center; gap:12px; color:var(--muted); font-size:.82rem; margin:16px 0;}
+  .or::before,.or::after{content:""; flex:1; height:1px; background:var(--line);}
+  .gbtn{width:100%; display:flex; align-items:center; justify-content:center; gap:10px;}
+  .gbtn img{width:18px; height:18px;}
+  .msg{font-size:.88rem; padding:10px 12px; border-radius:9px; margin:0 0 12px; display:none; text-align:left;}
+  .msg.err{display:block; background:#fbecea; color:var(--warn); border:1px solid #f0cfc8;}
+  .msg.ok{display:block; background:#eaf4f0; color:var(--teal-dark); border:1px solid #cfe6dd;}
+
+  .hint{font-size:.78rem; color:#9aa2ae; margin:10px 0 0;}
+
+  @media print{
+    body{background:#fff;}
+    .noprint{display:none !important;}
+    .card,.q{box-shadow:none; border-color:#d7dce4;}
+    .wrap{padding:0;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site noprint">
+    <div class="brand">
+      <img src="https://papertrailacademic.com/icon128.png" alt="" />
+      <div class="name">PaperTrail <span>Oral</span></div>
+    </div>
+    <a class="back" href="/dashboard">&larr; All reports</a>
+  </header>
+
+  <div id="content"><div class="state"><p>Loading…</p></div></div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const SUPABASE_URL = 'https://ktzrdhiqhidexunucuqp.supabase.co'
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0enJkaGlxaGlkZXh1bnVjdXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTQ2ODMsImV4cCI6MjA4ODE5MDY4M30.24Gbyh0C-wbDqQ31MD-ttXoCfLwjcWvjs9-UXAaqmHU'
+
+const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
+})
+
+const MARKERS = {
+  explained:       { sym: '✓', label: 'Accounted for',    cls: 'm-ok' },
+  thin:            { sym: '◐', label: 'Brief / thin',      cls: 'm-thin' },
+  couldnt_account: { sym: '⚑', label: "Couldn't account",  cls: 'm-flag' },
+  not_answered:    { sym: '—', label: 'Not answered',      cls: 'm-none' },
+}
+const content = document.getElementById('content')
+
+function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function fmtDate(iso){ if(!iso) return ''; try{ return new Date(iso).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) }catch{ return iso } }
+function fmtDur(sec){ if(sec==null) return ''; const m=Math.floor(sec/60), s=sec%60; return m+':'+String(s).padStart(2,'0') }
+function slug(s){ return String(s||'report').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50) || 'report' }
+function exportWho(r){
+  const name = (r.studentName||'').trim()
+  const secondary = [(r.studentEmail||'').trim(), (r.studentId||'').trim()].filter(Boolean).join(' · ')
+  if (name) return secondary ? `${name} (${secondary})` : name
+  return secondary || 'student'
+}
+
+function getReportId(){
+  const m = location.pathname.match(/\/report\/([^/?#]+)/)
+  if (m) return decodeURIComponent(m[1])
+  return new URLSearchParams(location.search).get('id')
+}
+
+// Normalise the session's question list into {idx, position, text}
+function buildQuestions(session){
+  const arr = Array.isArray(session.questions) ? session.questions : []
+  return arr.map((q, i) => ({
+    idx: (q && typeof q.idx === 'number') ? q.idx : i,
+    position: i + 1,
+    text: (typeof q === 'string') ? q : (q && q.question) ? q.question : '',
+  }))
+}
+
+// ── State screens ───────────────────────────────────────────────────────────
+function stateScreen(html){ content.innerHTML = '<div class="state">' + html + '</div>' }
+
+function signInScreen(){
+  content.innerHTML = `
+    <div class="state card"><div class="pad">
+      <div class="rule" style="margin-inline:auto"></div>
+      <h1>Sign in to view this report</h1>
+      <p>Use the same account you use in the PaperTrail extension.</p>
+      <div class="msg" id="authMsg"></div>
+      <form id="pwForm">
+        <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required /></div>
+        <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required /></div>
+        <button class="btn primary" style="width:100%" id="pwBtn" type="submit">Sign in</button>
+      </form>
+      <div class="or">or</div>
+      <button class="btn gbtn" id="googleBtn" type="button">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" /> Sign in with Google
+      </button>
+    </div></div>`
+  const msg = document.getElementById('authMsg')
+  const show = (t,k)=>{ msg.textContent=t; msg.className='msg '+(k||'err') }
+  document.getElementById('pwForm').addEventListener('submit', async (e)=>{
+    e.preventDefault()
+    const btn=document.getElementById('pwBtn'); btn.disabled=true; btn.textContent='Signing in…'
+    const { error } = await supabase.auth.signInWithPassword({
+      email: document.getElementById('email').value.trim(), password: document.getElementById('password').value })
+    btn.disabled=false; btn.textContent='Sign in'
+    if (error) return show(error.message || 'Could not sign in.')
+    boot()
+  })
+  document.getElementById('googleBtn').addEventListener('click', async ()=>{
+    const { error } = await supabase.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href } })
+    if (error) show(error.message || 'Could not start Google sign-in.')
+  })
+}
+
+// ── Audio (lazy, cached, staleness-aware) ───────────────────────────────────
+let audioCache = null, audioAt = 0
+async function getAudioMap(sessionId){
+  const now = Date.now()
+  if (audioCache && (now - audioAt) < 4*60*1000) return audioCache
+  const { data, error } = await supabase.functions.invoke('oral-get-audio-url', { body: { sessionId } })
+  if (error) throw error
+  const map = new Map()
+  for (const a of (data && data.audio ? data.audio : [])) map.set(a.idx, a.url)
+  audioCache = map; audioAt = now
+  return map
+}
+
+// ── Main report render ──────────────────────────────────────────────────────
+function renderReport({ report, session, responses }){
+  const qs = buildQuestions(session)
+  const qByIdx = new Map(qs.map(q => [q.idx, q]))
+  const respByIdx = new Map((responses || []).map(r => [r.question_idx, r]))
+  const perQuestion = Array.isArray(report.per_question) ? report.per_question.slice() : []
+  // order by display position
+  perQuestion.sort((a,b) => (qByIdx.get(a.idx)?.position ?? a.idx) - (qByIdx.get(b.idx)?.position ?? b.idx))
+
+  const title = session.essay_title?.trim() || 'Untitled essay'
+  const sName = (session.student_name || '').trim()
+  const sEmail = (session.student_email || '').trim()
+  const sId = (session.student_id || '').trim()
+  const secondary = [sEmail, sId].filter(Boolean).join(' · ')
+  const studentLine = sName
+    ? `${esc(sName)}${secondary ? ` <span style="color:var(--muted)">(${esc(secondary)})</span>` : ''}`
+    : (secondary ? esc(secondary) : 'student')
+  const downloaded = !!report.downloaded_at
+
+  const legend = Object.values(MARKERS).map(m =>
+    `<span class="lg"><span class="sym ${m.cls}">${m.sym}</span>${esc(m.label)}</span>`).join('')
+
+  const cards = perQuestion.map(pq => {
+    const q = qByIdx.get(pq.idx) || { position: pq.idx + 1, text: '' }
+    const m = MARKERS[pq.marker] || MARKERS.thin
+    const resp = respByIdx.get(pq.idx)
+    const isNA = pq.marker === 'not_answered'
+
+    let body = ''
+    if (isNA) {
+      body = `<p class="noanswer">No answer was recorded for this question.</p>`
+    } else {
+      if (pq.evidence) body += `<p class="evidence">${esc(pq.evidence)}</p>`
+      if (pq.askAbout) body += `<div class="askabout"><b>Worth asking:</b> ${esc(pq.askAbout)}</div>`
+      if (resp && resp.transcript) {
+        const conf = (resp.transcript_confidence != null)
+          ? ` &middot; transcription confidence ${Math.round(resp.transcript_confidence*100)}%` : ''
+        const dur = resp.audio_duration_seconds != null ? ` &middot; ${fmtDur(resp.audio_duration_seconds)}` : ''
+        body += `<div class="transcript"><div class="tlabel">Student's spoken answer</div>`
+          + `<div class="ttext">${esc(resp.transcript)}</div></div>`
+          + `<p class="tnote">Auto-transcribed${conf}${dur}</p>`
+      }
+      // audio
+      const audioGone = downloaded || (resp && resp.audio_deleted_at) || !resp
+      if (audioGone) {
+        body += `<div class="audiowrap noprint"><span class="audio-gone">Audio recording is no longer available.</span></div>`
+      } else {
+        body += `<div class="audiowrap noprint"><button class="btn small audiobtn" data-idx="${pq.idx}">&#9654; Load answer audio</button><div class="audioslot" id="aud-${pq.idx}"></div></div>`
+      }
+    }
+
+    return `<div class="q ${m.cls}">
+      <div class="qhead">
+        <div class="qn">Q${q.position}</div>
+        <div class="qtext">${esc(q.text)}</div>
+        <span class="chip ${m.cls}"><span>${m.sym}</span>${esc(m.label)}</span>
+      </div>
+      <div class="qbody">${body}</div>
+    </div>`
+  }).join('')
+
+  // follow-up
+  const fu = report.follow_up || {}
+  let followHtml = ''
+  if (fu.suggested) {
+    const refs = Array.isArray(fu.questionRefs) ? fu.questionRefs : []
+    const refItems = refs.map(n => {
+      const q = qs[n-1]
+      return q ? `<li><span class="rq">Q${n}.</span> ${esc(q.text)}</li>` : ''
+    }).join('')
+    followHtml = `<div class="card followup suggested"><div class="pad">
+      <div class="section-label">A follow-up may be worth it</div>
+      ${fu.note ? `<p class="fnote">${esc(fu.note)}</p>` : ''}
+      ${refItems ? `<ul class="refs">${refItems}</ul>` : ''}
+    </div></div>`
+  } else {
+    followHtml = `<div class="card"><div class="pad">
+      <div class="section-label">Follow-up</div>
+      <p class="metaline">No specific follow-up was flagged. Your judgment decides whether one is worth it.</p>
+    </div></div>`
+  }
+
+  content.innerHTML = `
+    <div class="card"><div class="pad">
+      <div class="rule"></div>
+      <h1>${esc(title)}</h1>
+      <p class="metaline"><b>Student:</b> ${studentLine} &nbsp;&middot;&nbsp; <b>Sent:</b> ${fmtDate(session.created_at)} &nbsp;&middot;&nbsp; <b>Report:</b> ${fmtDate(report.created_at)}</p>
+      <div class="actions noprint">
+        <button class="btn" id="printBtn">Print / save PDF</button>
+        <button class="btn primary" id="exportBtn">Export &amp; finalize</button>
+      </div>
+      <p class="hint noprint">Printing has no side effects. <b>Export &amp; finalize</b> saves a full copy to your computer and then permanently removes the student's audio from our servers (transcripts and this report stay for 90 days).</p>
+    </div></div>
+
+    ${report.overall ? `<div class="card"><div class="pad">
+      <div class="section-label">Overall read</div>
+      <p class="overall">${esc(report.overall)}</p>
+      <div class="legend">${legend}</div>
+    </div></div>` : ''}
+
+    <div class="section-label" style="margin:2px 4px 10px">Question by question</div>
+    ${cards}
+
+    ${followHtml}
+
+    <div class="card"><div class="pad">
+      <div class="disclaimer">${esc(report.disclaimer || '')}</div>
+    </div></div>`
+
+  // wire audio buttons
+  const sessionId = session.id
+  content.querySelectorAll('.audiobtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = Number(btn.dataset.idx)
+      const slot = document.getElementById('aud-' + idx)
+      btn.disabled = true; btn.textContent = 'Loading…'
+      try {
+        const map = await getAudioMap(sessionId)
+        const url = map.get(idx)
+        if (!url) { slot.innerHTML = '<span class="audio-gone">Audio recording is no longer available.</span>'; btn.remove(); return }
+        slot.innerHTML = '<audio controls preload="none" src="' + url + '"></audio>'
+        btn.remove()
+      } catch (e) {
+        btn.disabled = false; btn.textContent = '▶ Load answer audio'
+        slot.innerHTML = '<span class="audio-gone">Could not load audio — try reloading the page.</span>'
+      }
+    })
+  })
+
+  document.getElementById('printBtn').addEventListener('click', () => window.print())
+  document.getElementById('exportBtn').addEventListener('click', () => exportAndFinalize(sessionId, { report, session, responses }))
+}
+
+// ── Export & finalize (delete-on-download) ──────────────────────────────────
+const WARN = "Export & finalize will:\n\n• save a full copy (report + transcripts) to your computer, and\n• permanently delete the student's audio recordings from our servers.\n\nThe report and transcripts stay in your dashboard for 90 days. This cannot be undone. Continue?"
+
+async function exportAndFinalize(sessionId, ctx){
+  if (!confirm(WARN)) return
+  const btn = document.getElementById('exportBtn')
+  btn.disabled = true; btn.textContent = 'Exporting…'
+  const { data, error } = await supabase.functions.invoke('oral-download-report', { body: { sessionId } })
+  if (error || !data || !data.report) {
+    btn.disabled = false; btn.textContent = 'Export & finalize'
+    alert('Could not export the report. Please try again.')
+    return
+  }
+  const html = buildExportHtml(data.report)
+  const title = data.report.essayTitle || ctx.session.essay_title || 'report'
+  downloadBlob(html, 'oral-report-' + slug(title) + '.html', 'text/html;charset=utf-8')
+  // reflect that audio is now gone
+  audioCache = new Map(); audioAt = Date.now()
+  document.querySelectorAll('.audiowrap').forEach(w => { w.innerHTML = '<span class="audio-gone">Audio recording is no longer available.</span>' })
+  btn.textContent = 'Exported ✓'
+}
+
+function downloadBlob(text, filename, mime){
+  const blob = new Blob([text], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename
+  document.body.appendChild(a); a.click(); a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 4000)
+}
+
+// Standalone HTML the teacher keeps in their own records
+function buildExportHtml(r){
+  const perQuestion = Array.isArray(r.perQuestion) ? r.perQuestion : []
+  const questions = Array.isArray(r.questions) ? r.questions : []
+  const qByIdx = new Map(questions.map(q => [q.idx, q]))
+  perQuestion.sort((a,b) => (qByIdx.get(a.idx)?.position ?? a.idx) - (qByIdx.get(b.idx)?.position ?? b.idx))
+
+  const rows = perQuestion.map(pq => {
+    const q = qByIdx.get(pq.idx) || { position: pq.idx + 1, question: '', transcript: null }
+    const m = MARKERS[pq.marker] || MARKERS.thin
+    const na = pq.marker === 'not_answered'
+    const parts = []
+    if (na) parts.push('<p style="color:#8a93a3;font-style:italic">No answer was recorded for this question.</p>')
+    else {
+      if (pq.evidence) parts.push('<p>' + esc(pq.evidence) + '</p>')
+      if (pq.askAbout) parts.push('<p style="color:#1f5a4f"><b>Worth asking:</b> ' + esc(pq.askAbout) + '</p>')
+      if (q.transcript) parts.push('<div style="border-left:3px solid #e5e8ee;padding-left:12px;color:#3a4657"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#5b6472"><b>Student’s spoken answer</b></div><div style="white-space:pre-wrap">' + esc(q.transcript) + '</div></div>')
+    }
+    return '<div style="border:1px solid #e5e8ee;border-radius:10px;padding:14px 16px;margin:0 0 12px">'
+      + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">'
+      + '<div style="font-family:Georgia,serif;font-weight:700;font-size:16px">Q' + (q.position || '') + '. ' + esc(q.question) + '</div>'
+      + '<div style="white-space:nowrap;font-weight:700;font-size:13px">' + m.sym + ' ' + esc(m.label) + '</div></div>'
+      + '<div style="margin-top:8px">' + parts.join('') + '</div></div>'
+  }).join('')
+
+  const fu = r.followUp || {}
+  let fuHtml = ''
+  if (fu.suggested) {
+    const refs = Array.isArray(fu.questionRefs) ? fu.questionRefs.map(n => 'Q' + n).join(', ') : ''
+    fuHtml = '<h2 style="font-family:Georgia,serif;font-size:17px">A follow-up may be worth it</h2>'
+      + (fu.note ? '<p>' + esc(fu.note) + '</p>' : '')
+      + (refs ? '<p style="color:#5b6472"><b>Questions:</b> ' + esc(refs) + '</p>' : '')
+  }
+
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>PaperTrail Oral — '
+    + esc(r.essayTitle || 'Report') + '</title></head>'
+    + '<body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a2235;max-width:720px;margin:24px auto;padding:0 18px;line-height:1.6">'
+    + '<div style="border-bottom:3px solid #C9A84C;padding-bottom:12px;margin-bottom:18px">'
+    + '<div style="font-family:Georgia,serif;font-size:20px">PaperTrail Oral — Ownership report</div></div>'
+    + '<h1 style="font-family:Georgia,serif">' + esc(r.essayTitle || 'Untitled essay') + '</h1>'
+    + '<p style="color:#5b6472"><b>Student:</b> ' + esc(exportWho(r)) + ' &middot; <b>Report generated:</b> ' + esc(fmtDate(r.generatedAt)) + '</p>'
+    + (r.overall ? '<h2 style="font-family:Georgia,serif;font-size:17px">Overall read</h2><p>' + esc(r.overall) + '</p>' : '')
+    + '<h2 style="font-family:Georgia,serif;font-size:17px">Question by question</h2>' + rows
+    + fuHtml
+    + '<div style="background:#f7f8fa;border:1px dashed #d7dce4;border-radius:10px;padding:14px 16px;color:#5b6472;font-size:14px;margin-top:18px">' + esc(r.disclaimer || '') + '</div>'
+    + '<p style="color:#9aa2ae;font-size:12px;margin-top:16px">Exported from PaperTrail Oral on ' + esc(fmtDate(new Date().toISOString())) + '.</p>'
+    + '</body></html>'
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+async function boot(){
+  const id = getReportId()
+  if (!id) { stateScreen('<h1>No report specified</h1><p>This link is missing a report id.</p>'); return }
+
+  const { data: { session: authSession } } = await supabase.auth.getSession()
+  if (!authSession) { signInScreen(); return }
+
+  stateScreen('<p>Loading report…</p>')
+  const { data: report, error: rErr } = await supabase.from('oral_reports')
+    .select('id, session_id, per_question, overall, follow_up, disclaimer, created_at, downloaded_at')
+    .eq('id', id).maybeSingle()
+  if (rErr) { stateScreen('<h1>Could not load the report</h1><p>Please refresh and try again.</p>'); return }
+  if (!report) { stateScreen('<h1>Report not found</h1><p>It may have been removed, or this account does not have access to it. <a href="/dashboard">Back to your reports</a></p>'); return }
+
+  const [{ data: session, error: sErr }, { data: responses }] = await Promise.all([
+    supabase.from('oral_sessions').select('id, essay_title, student_name, student_email, student_id, questions, created_at, status').eq('id', report.session_id).maybeSingle(),
+    supabase.from('oral_responses').select('question_idx, transcript, transcript_confidence, audio_duration_seconds, audio_deleted_at').eq('session_id', report.session_id),
+  ])
+  if (sErr || !session) { stateScreen('<h1>Could not load the session</h1><p>Please refresh and try again.</p>'); return }
+
+  renderReport({ report, session, responses })
+}
+
+supabase.auth.onAuthStateChange((event) => { if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') boot() })
+boot()
+</script>
+</body>
+</html>

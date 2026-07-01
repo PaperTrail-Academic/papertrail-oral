@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>PaperTrail Oral — Teacher dashboard</title>
+<link rel="icon" href="https://papertrailacademic.com/icon128.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --blue:#4A6FA5; --gold:#C9A84C; --teal:#2a7a6b; --ink:#1a2235;
+    --teal-dark:#1f5a4f; --bg:#f6f7f9; --card:#ffffff; --line:#e5e8ee;
+    --muted:#5b6472; --warn:#b4452f;
+    --shadow:0 1px 3px rgba(26,34,53,.06), 0 6px 20px rgba(26,34,53,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"DM Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.55; -webkit-font-smoothing:antialiased;}
+  a{color:var(--teal)}
+  .wrap{max-width:820px; margin:0 auto; padding:22px 18px 80px;}
+  header.site{display:flex; align-items:center; gap:10px; padding:6px 0 18px; justify-content:space-between;}
+  header.site .brand{display:flex; align-items:center; gap:10px;}
+  header.site img{width:30px; height:30px; border-radius:6px;}
+  header.site .name{font-family:"Lora",serif; font-weight:700; font-size:1.05rem; letter-spacing:.2px;}
+  header.site .name span{color:var(--teal);}
+  .who{font-size:.85rem; color:var(--muted); display:flex; align-items:center; gap:10px;}
+  .btn{font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line);
+    background:#fff; color:var(--ink); padding:9px 14px; font-weight:600;}
+  .btn:hover{background:#f4f6f9;}
+  .btn.primary{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .btn.primary:hover{background:var(--teal-dark);}
+  .btn.ghost{background:transparent; border-color:transparent; color:var(--muted); padding:6px 8px;}
+  .btn.ghost:hover{color:var(--ink); background:#eef1f5;}
+  .btn:disabled{opacity:.55; cursor:default;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);}
+  .pad{padding:22px;}
+  .rule{height:3px; width:54px; background:var(--gold); border-radius:3px; margin:0 0 14px;}
+  h1{font-family:"Lora",serif; font-weight:700; font-size:1.5rem; line-height:1.25; margin:.1em 0 .3em;}
+  .lede{color:var(--muted); margin:0 0 18px;}
+
+  /* sign-in */
+  .signin{max-width:420px; margin:6vh auto 0;}
+  .field{margin:0 0 12px;}
+  .field label{display:block; font-size:.85rem; font-weight:600; margin:0 0 5px;}
+  .field input{width:100%; font:inherit; padding:11px 12px; border:1px solid var(--line);
+    border-radius:10px; background:#fbfbfc;}
+  .field input:focus{outline:2px solid #cfe0db; border-color:var(--teal);}
+  .or{display:flex; align-items:center; gap:12px; color:var(--muted); font-size:.82rem; margin:16px 0;}
+  .or::before,.or::after{content:""; flex:1; height:1px; background:var(--line);}
+  .gbtn{width:100%; display:flex; align-items:center; justify-content:center; gap:10px;}
+  .gbtn img{width:18px; height:18px;}
+  .msg{font-size:.88rem; padding:10px 12px; border-radius:9px; margin:0 0 12px; display:none;}
+  .msg.err{display:block; background:#fbecea; color:var(--warn); border:1px solid #f0cfc8;}
+  .msg.ok{display:block; background:#eaf4f0; color:var(--teal-dark); border:1px solid #cfe6dd;}
+  .link{background:none; border:none; color:var(--teal); font:inherit; cursor:pointer; padding:0; text-decoration:underline;}
+
+  /* session list */
+  .listhead{display:flex; align-items:baseline; justify-content:space-between; margin:0 0 12px;}
+  .count{font-size:.85rem; color:var(--muted);}
+  ul.sessions{list-style:none; margin:0; padding:0;}
+  li.srow{display:flex; align-items:center; gap:14px; padding:15px 16px; border:1px solid var(--line);
+    border-radius:12px; background:#fff; margin:0 0 10px; box-shadow:var(--shadow);}
+  li.srow .main{flex:1; min-width:0;}
+  li.srow .title{font-family:"Lora",serif; font-weight:600; font-size:1.05rem; margin:0 0 3px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  li.srow .meta{font-size:.83rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pill{font-size:.76rem; font-weight:700; letter-spacing:.02em; padding:5px 10px; border-radius:999px; white-space:nowrap;}
+  .pill.ready{background:#eaf4f0; color:var(--teal-dark); border:1px solid #cfe6dd;}
+  .pill.wait{background:#fbf6e8; color:#8a6d1f; border:1px solid #ecdcae;}
+  .pill.exp{background:#f1f3f6; color:#6a7382; border:1px solid #e0e4ea;}
+  .go{color:var(--teal); font-weight:700; text-decoration:none; white-space:nowrap;}
+  .empty{color:var(--muted); text-align:center; padding:34px 10px;}
+  .loading{color:var(--muted); text-align:center; padding:34px 10px;}
+  .foot{margin-top:26px; font-size:.8rem; color:#9aa2ae; text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <div class="brand">
+      <img src="https://papertrailacademic.com/icon128.png" alt="" />
+      <div class="name">PaperTrail <span>Oral</span></div>
+    </div>
+    <div class="who" id="who" hidden>
+      <span id="whoEmail"></span>
+      <button class="btn ghost" id="signout">Sign out</button>
+    </div>
+  </header>
+
+  <!-- SIGN-IN -->
+  <section class="signin card" id="signinCard" hidden>
+    <div class="pad">
+      <div class="rule"></div>
+      <h1>Teacher sign-in</h1>
+      <p class="lede">Use the same account you use in the PaperTrail extension.</p>
+      <div class="msg" id="authMsg"></div>
+      <form id="pwForm">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required />
+        </div>
+        <button class="btn primary" style="width:100%" id="pwBtn" type="submit">Sign in</button>
+      </form>
+      <div style="text-align:center;margin-top:10px">
+        <button class="link" id="forgot" type="button">Forgot password?</button>
+      </div>
+      <div class="or">or</div>
+      <button class="btn gbtn" id="googleBtn" type="button">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" />
+        Sign in with Google
+      </button>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dash" hidden>
+    <div class="rule"></div>
+    <h1>Your oral checks</h1>
+    <p class="lede">Reports appear here as students finish recording. Open one to read the
+      per-question ownership notes, play the answers, and export for your records.</p>
+    <div class="listhead">
+      <div class="count" id="count"></div>
+      <button class="btn ghost" id="refresh">Refresh</button>
+    </div>
+    <div id="listWrap">
+      <div class="loading" id="loading">Loading your sessions…</div>
+    </div>
+    <div class="foot">Reports are kept for 90 days. Student audio is removed when you export a
+      report, or automatically after 30 days.</div>
+  </section>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const SUPABASE_URL = 'https://ktzrdhiqhidexunucuqp.supabase.co'
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0enJkaGlxaGlkZXh1bnVjdXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTQ2ODMsImV4cCI6MjA4ODE5MDY4M30.24Gbyh0C-wbDqQ31MD-ttXoCfLwjcWvjs9-UXAaqmHU'
+
+const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
+})
+
+const $ = (id) => document.getElementById(id)
+const signinCard = $('signinCard'), dash = $('dash'), who = $('who')
+const authMsg = $('authMsg')
+
+function showMsg(text, kind) {
+  authMsg.textContent = text
+  authMsg.className = 'msg ' + (kind || 'err')
+}
+function clearMsg() { authMsg.className = 'msg'; authMsg.textContent = '' }
+
+function fmtDate(iso) {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  } catch { return iso }
+}
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+async function render() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    signinCard.hidden = false; dash.hidden = true; who.hidden = true
+    return
+  }
+  signinCard.hidden = true; dash.hidden = false; who.hidden = false
+  $('whoEmail').textContent = session.user.email || ''
+  await loadSessions()
+}
+
+async function loadSessions() {
+  const wrap = $('listWrap')
+  wrap.innerHTML = '<div class="loading">Loading your sessions…</div>'
+  const [{ data: sessions, error: sErr }, { data: reports, error: rErr }] = await Promise.all([
+    supabase.from('oral_sessions')
+      .select('id, essay_title, student_name, student_email, student_id, status, created_at, questions')
+      .order('created_at', { ascending: false }),
+    supabase.from('oral_reports').select('id, session_id, created_at, downloaded_at'),
+  ])
+  if (sErr || rErr) {
+    wrap.innerHTML = '<div class="empty">Could not load your sessions. Please refresh.</div>'
+    return
+  }
+  const reportBySession = new Map()
+  for (const r of (reports || [])) reportBySession.set(r.session_id, r)
+
+  const list = sessions || []
+  $('count').textContent = list.length ? (list.length + (list.length === 1 ? ' session' : ' sessions')) : ''
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty">No oral checks yet. Send one from the PaperTrail extension and it will appear here.</div>'
+    return
+  }
+
+  const rows = list.map((s) => {
+    const report = reportBySession.get(s.id)
+    const qCount = Array.isArray(s.questions) ? s.questions.length : 0
+    const title = s.essay_title?.trim() || 'Untitled essay'
+    const student = s.student_name || s.student_email || s.student_id || 'student'
+    const metaBits = ['<b>' + escapeHtml(student) + '</b>', fmtDate(s.created_at), qCount ? (qCount + ' question' + (qCount === 1 ? '' : 's')) : '']
+      .filter(Boolean).join(' &middot; ')
+
+    let pill, action
+    if (report) {
+      pill = '<span class="pill ready">Report ready</span>'
+      action = '<a class="go" href="/report/' + encodeURIComponent(report.id) + '">Open &rarr;</a>'
+    } else if (s.status === 'expired') {
+      pill = '<span class="pill exp">Expired</span>'
+      action = ''
+    } else {
+      pill = '<span class="pill wait">Awaiting responses</span>'
+      action = ''
+    }
+    return '<li class="srow">'
+      + '<div class="main"><div class="title">' + escapeHtml(title) + '</div>'
+      + '<div class="meta">' + metaBits + '</div></div>'
+      + pill + action + '</li>'
+  }).join('')
+  wrap.innerHTML = '<ul class="sessions">' + rows + '</ul>'
+}
+
+// ── Auth actions ────────────────────────────────────────────────────────────
+$('pwForm').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  clearMsg()
+  const btn = $('pwBtn'); btn.disabled = true; btn.textContent = 'Signing in…'
+  const { error } = await supabase.auth.signInWithPassword({
+    email: $('email').value.trim(), password: $('password').value,
+  })
+  btn.disabled = false; btn.textContent = 'Sign in'
+  if (error) { showMsg(error.message || 'Could not sign in.', 'err'); return }
+  await render()
+})
+
+$('googleBtn').addEventListener('click', async () => {
+  clearMsg()
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: location.origin + '/dashboard' },
+  })
+  if (error) showMsg(error.message || 'Could not start Google sign-in.', 'err')
+})
+
+$('forgot').addEventListener('click', async () => {
+  clearMsg()
+  const email = $('email').value.trim()
+  if (!email) { showMsg('Enter your email above first, then tap “Forgot password?”.', 'err'); return }
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + '/dashboard',
+  })
+  if (error) showMsg(error.message || 'Could not send the reset email.', 'err')
+  else showMsg('If that email has an account, a password-reset link is on its way.', 'ok')
+})
+
+$('signout').addEventListener('click', async () => {
+  await supabase.auth.signOut()
+  await render()
+})
+
+$('refresh').addEventListener('click', loadSessions)
+
+supabase.auth.onAuthStateChange(async (event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    const np = prompt('Set a new password (at least 6 characters):')
+    if (np && np.length >= 6) {
+      const { error } = await supabase.auth.updateUser({ password: np })
+      showMsg(error ? (error.message || 'Could not update password.') : 'Password updated — you are signed in.', error ? 'err' : 'ok')
+    }
+  }
+  render()
+})
+render()
+</script>
+</body>
+</html>
