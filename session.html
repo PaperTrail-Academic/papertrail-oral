@@ -59,6 +59,10 @@
   .qtext{font-family:"Lora",serif; font-size:1.3rem; line-height:1.35; font-weight:600; margin:0 0 6px;}
   .hint{color:var(--muted); font-size:.92rem; margin:14px 0 0;}
 
+  .listen{display:flex; align-items:center; gap:12px; margin-top:18px; color:var(--teal-dark); font-weight:600;}
+  .listen .spk{font-size:1.5rem; line-height:1;}
+  .btn-play{background:var(--teal); color:#fff;}
+  .btn-play:hover:not(:disabled){background:var(--teal-dark);}
   .countdown{display:flex; align-items:center; gap:14px; margin-top:18px;}
   .countdown .num{font-family:"Lora",serif; font-weight:700; font-size:2.6rem; color:var(--teal); width:1.6em; text-align:center;}
   .countdown .lbl{color:var(--muted);}
@@ -130,7 +134,7 @@
       <strong>How this works</strong>
       <ul class="rules">
         <li>You’ll answer <b id="rules-n">several</b> questions, <b>one at a time</b>.</li>
-        <li>You won’t see a question until you press <b>Begin</b>. Then you get <b id="rules-read">7</b> seconds to read it, and <b>recording starts automatically</b>.</li>
+        <li>You won’t see a question until you press <b>Begin</b>. The question is <b>read aloud</b>, then you get <b id="rules-read">10</b> seconds to prepare, and <b>recording starts automatically</b>.</li>
         <li>Each answer can run up to <b>2 minutes</b>, then it stops on its own — no need to fill the time.</li>
         <li><b>One take per question</b> — there are no re-records. Just talk it through in your own words; this isn’t a memory test.</li>
         <li>Your essay is below for reference the whole time.</li>
@@ -181,7 +185,7 @@ const SUPABASE_URL = "https://ktzrdhiqhidexunucuqp.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0enJkaGlxaGlkZXh1bnVjdXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTQ2ODMsImV4cCI6MjA4ODE5MDY4M30.24Gbyh0C-wbDqQ31MD-ttXoCfLwjcWvjs9-UXAaqmHU";
 const FN = SUPABASE_URL + "/functions/v1";
 
-const READ_SECONDS = 12;      // read window before recording starts (10–15 feels fair)
+const PREP_SECONDS = 10;      // prep window AFTER the question is read aloud, before recording starts
 const MAX_ANSWER_SECONDS = 120; // 2-min auto-stop cap — authorship answers stay concise; also bounds file size
 
 function readToken(){
@@ -259,9 +263,10 @@ async function loadSession(){
   }
 
   els.rulesN.textContent = totalQ;
-  els.rulesRead.textContent = READ_SECONDS;
+  els.rulesRead.textContent = PREP_SECONDS;
   if(data.essayTitle){ els.essayTitle.textContent=data.essayTitle; } else { hide(els.essayTitle); }
-  els.essayExcerpt.textContent=(data.essayExcerpt||"").trim()||"(Your essay text isn’t shown here.)";
+  // Full essay (essayText); essayExcerpt kept as a fallback for an older server response.
+  els.essayExcerpt.textContent=(data.essayText||data.essayExcerpt||"").trim()||"(Your essay text isn’t shown here.)";
 
   hide(els.loading); show(els.main);
   updateProgress();
@@ -282,15 +287,32 @@ function finish(){
   };
 }
 
+/* ── TTS: each question is read aloud (Deepgram Aura via oral-speak-question).
+   Prefetched as a blob while the student is on the Begin screen so playback is
+   instant; resolves to an object URL, or null if TTS is unavailable (the flow
+   then degrades to text + prep countdown — a student is never stuck). */
+const ttsCache = {};
+function prefetchTTS(idx){
+  if(ttsCache[idx]!==undefined) return ttsCache[idx];
+  ttsCache[idx] = fetch(FN+"/oral-speak-question?token="+encodeURIComponent(TOKEN)+"&idx="+idx,{
+      headers:{"apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY},
+    })
+    .then(r=>{ if(!r.ok) throw 0; return r.blob(); })
+    .then(b=>URL.createObjectURL(b))
+    .catch(()=>null);
+  return ttsCache[idx];
+}
+
 function renderIdle(){
   const n = cursor+1;
   els.stageBody.innerHTML = `
     <p class="qlabel">Question ${n} of ${totalQ}</p>
-    <p class="hint">When you press Begin, the question appears and you’ll have
-      <b>${READ_SECONDS} seconds</b> to read it before recording starts. You get <b>one take</b>.</p>
+    <p class="hint">When you press Begin, the question appears and is <b>read aloud</b>. Then you’ll have
+      <b>${PREP_SECONDS} seconds</b> to prepare before recording starts. You get <b>one take</b>.</p>
     <button class="btn-begin" id="beginBtn">Begin question ${n}</button>
     <div class="status" id="stStatus"></div>`;
   el("beginBtn").onclick = onBegin;
+  prefetchTTS(QUESTIONS[cursor].idx); // warm the audio while they sit on Begin
 }
 
 async function onBegin(){
@@ -302,19 +324,52 @@ async function onBegin(){
     try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
     catch(e){ st.textContent="Microphone access was blocked. Allow it in your browser, then press Begin again."; st.className="status err"; btn.disabled=false; return; }
   }
-  renderReading();
+  renderListen();
 }
 
-function renderReading(){
+/* Stage A: reveal the question text and read it aloud. When the audio ends
+   (or is unavailable), move to the prep countdown. */
+async function renderListen(){
   const q=QUESTIONS[cursor];
   const n=cursor+1;
   els.stageBody.innerHTML=`
     <p class="qlabel">Question ${n} of ${totalQ}</p>
     <p class="qtext"></p>
-    <div class="countdown"><div class="num" id="cd">${READ_SECONDS}</div>
-      <div class="lbl">Read the question — recording starts automatically.</div></div>`;
+    <div class="listen"><span class="spk">🔊</span><span id="listenLbl">Listen — your question is being read aloud…</span></div>
+    <div class="status" id="stStatus"></div>`;
   els.stageBody.querySelector(".qtext").textContent=q.question; // reveal now (not before)
-  let left=READ_SECONDS;
+
+  const src = await prefetchTTS(q.idx);
+  if(!src) return renderPrep(); // TTS unavailable → text-only, straight to prep
+
+  let advanced=false;
+  const goPrep=()=>{ if(advanced) return; advanced=true; renderPrep(); };
+  const audio=new Audio(src);
+  audio.onended=goPrep;
+  audio.onerror=goPrep;
+  audio.play().catch(()=>{
+    // Autoplay blocked (some mobile browsers) — ask for one tap instead.
+    const lbl=el("listenLbl");
+    if(!lbl) return goPrep();
+    lbl.innerHTML="";
+    const b=document.createElement("button");
+    b.className="btn-play"; b.textContent="🔊 Tap to hear your question";
+    b.onclick=()=>{ b.disabled=true; audio.play().catch(goPrep); };
+    lbl.appendChild(b);
+  });
+}
+
+/* Stage B: prep countdown, then recording starts automatically. */
+function renderPrep(){
+  const q=QUESTIONS[cursor];
+  const n=cursor+1;
+  els.stageBody.innerHTML=`
+    <p class="qlabel">Question ${n} of ${totalQ}</p>
+    <p class="qtext"></p>
+    <div class="countdown"><div class="num" id="cd">${PREP_SECONDS}</div>
+      <div class="lbl">Prepare your answer — recording starts automatically.</div></div>`;
+  els.stageBody.querySelector(".qtext").textContent=q.question;
+  let left=PREP_SECONDS;
   const cd=el("cd");
   const t=setInterval(()=>{
     left--; if(cd) cd.textContent=Math.max(left,0);
