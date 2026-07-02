@@ -114,22 +114,40 @@
 
   .hint{font-size:.78rem; color:#9aa2ae; margin:10px 0 0;}
 
+  @page{margin:15mm;}
   @media print{
-    body{background:#fff;}
+    body{background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; font-size:.94rem;}
     .noprint{display:none !important;}
-    .card,.q{box-shadow:none; border-color:#d7dce4;}
-    .wrap{padding:0;}
+    .wrap{padding:0; max-width:none;}
+    header.site{padding:0 0 12px; border-bottom:2px solid var(--gold); margin-bottom:16px;}
+    a{color:inherit; text-decoration:none;}
+
+    /* never slice a card/question mid-element across a page boundary */
+    .card,.q{box-shadow:none; border-color:#cfd5df; break-inside:avoid; page-break-inside:avoid;}
+    .qhead,.askabout,.disclaimer{break-inside:avoid; page-break-inside:avoid;}
+    .qhead{break-after:avoid;}
+    .section-label{break-after:avoid; page-break-after:avoid;}
+    h1{break-after:avoid; font-size:1.35rem;}
+
+    /* a very long transcript can exceed one page — let IT flow, but keep its
+       label attached and never strand the question head alone */
+    .transcript{break-inside:auto;}
+    .transcript .tlabel{break-after:avoid;}
+
+    .q{margin-bottom:10px;}
+    .pad{padding:16px 18px;}
+    .legend{display:none;} /* markers are labeled on every chip; legend is screen help */
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header class="site noprint">
+  <header class="site">
     <div class="brand">
       <img src="https://papertrailacademic.com/icon128.png" alt="" />
       <div class="name">PaperTrail <span>Oral</span></div>
     </div>
-    <a class="back" href="/dashboard">&larr; All reports</a>
+    <a class="back noprint" href="/dashboard">&larr; All reports</a>
   </header>
 
   <div id="content"><div class="state"><p>Loading…</p></div></div>
@@ -412,7 +430,7 @@ function buildExportHtml(r){
       if (pq.askAbout) parts.push('<p style="color:#1f5a4f"><b>Worth asking:</b> ' + esc(pq.askAbout) + '</p>')
       if (q.transcript) parts.push('<div style="border-left:3px solid #e5e8ee;padding-left:12px;color:#3a4657"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#5b6472"><b>Student’s spoken answer</b></div><div style="white-space:pre-wrap">' + esc(q.transcript) + '</div></div>')
     }
-    return '<div style="border:1px solid #e5e8ee;border-radius:10px;padding:14px 16px;margin:0 0 12px">'
+    return '<div class="q" style="border:1px solid #e5e8ee;border-radius:10px;padding:14px 16px;margin:0 0 12px">'
       + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">'
       + '<div style="font-family:Georgia,serif;font-weight:700;font-size:16px">Q' + (q.position || '') + '. ' + esc(q.question) + '</div>'
       + '<div style="white-space:nowrap;font-weight:700;font-size:13px">' + m.sym + ' ' + esc(m.label) + '</div></div>'
@@ -429,7 +447,9 @@ function buildExportHtml(r){
   }
 
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>PaperTrail Oral — '
-    + esc(r.essayTitle || 'Report') + '</title></head>'
+    + esc(r.essayTitle || 'Report') + '</title>'
+    + '<style>@page{margin:15mm} @media print{ .q,.disc{break-inside:avoid;page-break-inside:avoid} h1,h2{break-after:avoid;page-break-after:avoid} body{-webkit-print-color-adjust:exact;print-color-adjust:exact} }</style>'
+    + '</head>'
     + '<body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a2235;max-width:720px;margin:24px auto;padding:0 18px;line-height:1.6">'
     + '<div style="border-bottom:3px solid #C9A84C;padding-bottom:12px;margin-bottom:18px">'
     + '<div style="font-family:Georgia,serif;font-size:20px">PaperTrail Oral — Ownership report</div></div>'
@@ -438,7 +458,7 @@ function buildExportHtml(r){
     + (r.overall ? '<h2 style="font-family:Georgia,serif;font-size:17px">Overall read</h2><p>' + esc(r.overall) + '</p>' : '')
     + '<h2 style="font-family:Georgia,serif;font-size:17px">Question by question</h2>' + rows
     + fuHtml
-    + '<div style="background:#f7f8fa;border:1px dashed #d7dce4;border-radius:10px;padding:14px 16px;color:#5b6472;font-size:14px;margin-top:18px">' + esc(r.disclaimer || '') + '</div>'
+    + '<div class="disc" style="background:#f7f8fa;border:1px dashed #d7dce4;border-radius:10px;padding:14px 16px;color:#5b6472;font-size:14px;margin-top:18px">' + esc(r.disclaimer || '') + '</div>'
     + '<p style="color:#9aa2ae;font-size:12px;margin-top:16px">Exported from PaperTrail Oral on ' + esc(fmtDate(new Date().toISOString())) + '.</p>'
     + '</body></html>'
 }
