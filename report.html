@@ -164,10 +164,11 @@ const supabase = createClient(SUPABASE_URL, ANON_KEY, {
 })
 
 const MARKERS = {
-  explained:       { sym: '✓', label: 'Accounted for',    cls: 'm-ok' },
-  thin:            { sym: '◐', label: 'Brief / thin',      cls: 'm-thin' },
-  couldnt_account: { sym: '⚑', label: "Couldn't account",  cls: 'm-flag' },
-  not_answered:    { sym: '—', label: 'Not answered',      cls: 'm-none' },
+  explained:              { sym: '✓', label: 'Accounted for',    cls: 'm-ok' },
+  thin:                   { sym: '◐', label: 'Brief / thin',      cls: 'm-thin' },
+  couldnt_account:        { sym: '⚑', label: "Couldn't account",  cls: 'm-flag' },
+  recorded_untranscribed: { sym: '▶', label: 'Recorded — no transcript', cls: 'm-none' },
+  not_answered:           { sym: '—', label: 'Not answered',      cls: 'm-none' },
 }
 const content = document.getElementById('content')
 
