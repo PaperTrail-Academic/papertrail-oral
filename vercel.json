@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "app.papertrailacademic.com" }],
+      "destination": "/app.html"
+    },
+    { "source": "/app", "destination": "/app.html" },
     { "source": "/session/:token", "destination": "/session.html" },
     { "source": "/report/:id", "destination": "/report.html" },
     { "source": "/dashboard", "destination": "/dashboard.html" }

@@ -1,7 +1,12 @@
-# PaperTrail Oral — site (Phase 1)
+# PaperTrail Oral + Teacher web app — site
 
-Static site (no build step). Student recording page + teacher report dashboard, all on
-`oral.papertrailacademic.com`.
+Static site (no build step). This ONE repo/Vercel project serves TWO domains:
+
+- **`oral.papertrailacademic.com`** — student recording page + teacher report dashboard (Phase 1).
+- **`app.papertrailacademic.com`** — the teacher web app (Phase 2): Verify Single, Verify Compare,
+  and Oral Defense for teachers WITHOUT the Chrome extension. Paste-in text, same edge functions,
+  same shared PaperTrail Token wallet, Lemon Squeezy checkout links. (The repo name stays
+  `papertrail-oral` — renaming buys nothing user-facing; users only ever see the domains.)
 
 ## Files
 - `session.html` — student recording page. Reads the token from `/session/{token}`, calls
@@ -17,8 +22,20 @@ Static site (no build step). Student recording page + teacher report dashboard, 
   "Print / save PDF" has no side effects; "Export & finalize" calls `oral-download-report`, which
   saves a copy **and permanently deletes the student audio** (delete-on-download).
 - `index.html` — public front door for `oral.papertrailacademic.com/`; links to teacher sign-in.
-- `vercel.json` — rewrites `/session/:token` → `/session.html`, `/report/:id` → `/report.html`,
-  `/dashboard` → `/dashboard.html`.
+- `app.html` — **teacher web app** (`app.papertrailacademic.com`). Sign-in AND sign-up (non-extension
+  teachers are the audience) + three tabs: 🔬 Verify Single, ⚖️ Verify Compare, 🎙️ Oral Defense.
+  One shared "Submitted work" textarea reparents between tabs (same mechanic as the extension
+  panel). Verify posts to `generate-report` and polls the `reports` row (fast/slow two-phase,
+  privacy-PATCH of `report_json` after fetch); Compare computes `algorithmicScores` in-browser via
+  `lib/stylematch.js`. Oral is the same generate → curate → send flow as the extension's `oral.js`
+  (pool-aware Back button, 10-question cap, 4–6 nudge, Gmail compose). Reports render via
+  `lib/reports.js` into a popup and are cached (last 5) in `localStorage`.
+- `lib/stylematch.js`, `lib/reports.js` — **verbatim copies of the extension modules**
+  (`papertrail-3.4.0/stylematch.js`, `reports.js`). ⚠ When either changes in the extension,
+  re-copy it here — treat the extension as the single source of truth.
+- `vercel.json` — host rewrite `app.papertrailacademic.com/` → `/app.html` (plus `/app` on any
+  host, for pre-DNS testing on the vercel.app URL); `/session/:token` → `/session.html`,
+  `/report/:id` → `/report.html`, `/dashboard` → `/dashboard.html`.
 
 The dashboard/report pages read their data directly from Supabase under RLS
 (`auth.uid() = teacher_id` on `oral_sessions` / `oral_reports`; responses via session ownership).
@@ -37,6 +54,15 @@ Audio and export go through the two teacher edge functions, which verify ownersh
    Wait for it to verify.
 5. Test the dashboard at `https://<project>.vercel.app/dashboard` and a report at
    `.../report/<report-id>` (fallback without the rewrite: `.../report.html?id=<report-id>`).
+
+### Adding the teacher web app domain (Phase 2)
+1. Test first on `https://<project>.vercel.app/app` (no DNS needed).
+2. Vercel project → Settings → Domains → add `app.papertrailacademic.com`.
+3. Cloudflare: CNAME `app` → the Vercel-shown project-specific target, **DNS-only (grey cloud)**
+   (same as `oral` — the proxy fights Vercel's cert otherwise).
+4. Supabase → Authentication → URL Configuration → Redirect URLs: add
+   `https://app.papertrailacademic.com` and `https://<project>.vercel.app/app`
+   (Google sign-in, sign-up confirmation, and password reset all redirect here).
 
 ## Required Supabase Auth config (one-time — needed for sign-in on the website)
 Supabase → Authentication → URL Configuration:

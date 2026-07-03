@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>PaperTrail — Teacher tools</title>
+<link rel="icon" href="https://papertrailacademic.com/icon128.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --blue:#4A6FA5; --gold:#C9A84C; --teal:#2a7a6b; --ink:#1a2235;
+    --teal-dark:#1f5a4f; --bg:#f6f7f9; --card:#ffffff; --line:#e5e8ee;
+    --muted:#5b6472; --warn:#b4452f;
+    --shadow:0 1px 3px rgba(26,34,53,.06), 0 6px 20px rgba(26,34,53,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"DM Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.55; -webkit-font-smoothing:antialiased;}
+  a{color:var(--teal)}
+  .wrap{max-width:960px; margin:0 auto; padding:22px 18px 80px;}
+  header.site{display:flex; align-items:center; gap:10px; padding:6px 0 14px; justify-content:space-between; flex-wrap:wrap;}
+  header.site .brand{display:flex; align-items:center; gap:10px;}
+  header.site img{width:30px; height:30px; border-radius:6px;}
+  header.site .name{font-family:"Lora",serif; font-weight:700; font-size:1.05rem; letter-spacing:.2px;}
+  header.site .name span{color:var(--teal);}
+  .who{font-size:.85rem; color:var(--muted); display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .btn{font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line);
+    background:#fff; color:var(--ink); padding:9px 14px; font-weight:600;}
+  .btn:hover{background:#f4f6f9;}
+  .btn.primary{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .btn.primary:hover:not(:disabled){background:var(--teal-dark);}
+  .btn.ghost{background:transparent; border-color:transparent; color:var(--muted); padding:6px 8px;}
+  .btn.ghost:hover{color:var(--ink); background:#eef1f5;}
+  .btn:disabled{opacity:.55; cursor:default;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);}
+  .pad{padding:22px;}
+  .rule{height:3px; width:54px; background:var(--gold); border-radius:3px; margin:0 0 14px;}
+  h1{font-family:"Lora",serif; font-weight:700; font-size:1.5rem; line-height:1.25; margin:.1em 0 .3em;}
+  .lede{color:var(--muted); margin:0 0 18px;}
+  .tokenchip{display:inline-flex; align-items:center; gap:5px; background:#eaf4f0; color:var(--teal-dark);
+    border:1px solid #cfe6dd; border-radius:999px; padding:5px 12px; font-size:.82rem; font-weight:700;
+    cursor:pointer; white-space:nowrap;}
+  .tokenchip:hover{background:#dcefe7;}
+
+  /* sign-in */
+  .signin{max-width:440px; margin:6vh auto 0;}
+  .field{margin:0 0 12px;}
+  .field label{display:block; font-size:.85rem; font-weight:600; margin:0 0 5px;}
+  .field input{width:100%; font:inherit; padding:11px 12px; border:1px solid var(--line);
+    border-radius:10px; background:#fbfbfc;}
+  .field input:focus{outline:2px solid #cfe0db; border-color:var(--teal);}
+  .or{display:flex; align-items:center; gap:12px; color:var(--muted); font-size:.82rem; margin:16px 0;}
+  .or::before,.or::after{content:""; flex:1; height:1px; background:var(--line);}
+  .gbtn{width:100%; display:flex; align-items:center; justify-content:center; gap:10px;}
+  .gbtn img{width:18px; height:18px;}
+  .msg{font-size:.88rem; padding:10px 12px; border-radius:9px; margin:0 0 12px; display:none;}
+  .msg.err{display:block; background:#fbecea; color:var(--warn); border:1px solid #f0cfc8;}
+  .msg.ok{display:block; background:#eaf4f0; color:var(--teal-dark); border:1px solid #cfe6dd;}
+  .link{background:none; border:none; color:var(--teal); font:inherit; cursor:pointer; padding:0; text-decoration:underline;}
+  .authswitch{text-align:center; font-size:.86rem; color:var(--muted); margin-top:14px;}
+
+  /* metadata accordion */
+  details.metadata{border:1px solid var(--line); border-radius:12px; background:#fff; margin:0 0 14px; box-shadow:var(--shadow);}
+  details.metadata summary{list-style:none; cursor:pointer; padding:13px 16px; font-weight:600; font-size:.9rem;
+    display:flex; align-items:center; gap:8px;}
+  details.metadata summary::-webkit-details-marker{display:none;}
+  details.metadata summary .hint{font-weight:400; color:var(--muted); font-size:.8rem;}
+  .metagrid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:0 16px 16px;}
+  .metagrid .field{margin:0;}
+  .metagrid .field label{font-size:.76rem; text-transform:uppercase; letter-spacing:.03em; color:var(--muted);}
+  .metagrid .field input{padding:8px 10px; font-size:.88rem;}
+  @media (max-width:640px){ .metagrid{grid-template-columns:1fr 1fr;} }
+
+  /* tabs */
+  .tabs{display:flex; gap:4px; border-bottom:2px solid var(--line); margin:0 0 16px; flex-wrap:wrap;}
+  .tab{font:inherit; font-weight:600; font-size:.92rem; color:var(--muted); background:none; border:none;
+    cursor:pointer; padding:10px 14px; border-bottom:3px solid transparent; margin-bottom:-2px; white-space:nowrap;}
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--teal-dark); border-bottom-color:var(--teal);}
+
+  /* panes */
+  .pane{display:none;}
+  .pane.active{display:block;}
+  .intro{font-size:.88rem; color:#33404f; background:#eef5f2; border:1px solid #d3e6df; border-radius:10px;
+    padding:11px 14px; margin:0 0 14px; line-height:1.6;}
+  .intro b{color:var(--teal-dark);}
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:720px){ .cols{grid-template-columns:1fr;} }
+  .col{display:flex; flex-direction:column;}
+  .colhdr{display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 0 6px;}
+  .colhdr .t{font-weight:700; font-size:.86rem;}
+  .wc{font-size:.76rem; font-weight:700; padding:2px 9px; border-radius:999px; white-space:nowrap;}
+  .wc.ok{background:#e6f4ea; color:#137333;}
+  .wc.bad{background:#fbecea; color:var(--warn);}
+  textarea.sample{width:100%; min-height:260px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:.82rem; line-height:1.6; padding:12px; border:1px solid var(--line); border-radius:10px;
+    background:#fff; resize:vertical; color:var(--ink);}
+  textarea.sample:focus{outline:2px solid #cfe0db; border-color:var(--teal);}
+  .paste-note{font-size:.78rem; color:var(--muted); margin:6px 0 0; line-height:1.5;}
+  .runbar{display:flex; align-items:center; gap:12px; margin:16px 0 0; flex-wrap:wrap;}
+  .runbar .status{font-size:.82rem; color:var(--muted);}
+  .errline{display:none; font-size:.86rem; color:var(--warn); background:#fbecea; border:1px solid #f0cfc8;
+    border-radius:9px; padding:9px 12px; margin:12px 0 0; line-height:1.5;}
+
+  /* oral */
+  .steps{display:flex; gap:8px; margin:0 0 10px; flex-wrap:wrap;}
+  .step{flex:1; min-width:150px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
+  .step.rep{background:#fffaf0; border-color:#e3d49c;}
+  .step .n{display:inline-flex; width:19px; height:19px; border-radius:50%; background:var(--teal); color:#fff;
+    font-size:.72rem; font-weight:700; align-items:center; justify-content:center; margin-bottom:5px;}
+  .step.rep .n{background:var(--gold);}
+  .step .t{font-size:.84rem; font-weight:700;}
+  .step .s{font-size:.76rem; color:var(--muted); line-height:1.4;}
+  .step .cost{font-size:.74rem; color:#8a6d1f; font-weight:700;}
+  .payoff{font-size:.85rem; color:#3c4043; background:#fffaf0; border:1px solid #ecdfb8; border-left:4px solid var(--gold);
+    border-radius:0 8px 8px 0; padding:10px 13px; line-height:1.55; margin:0 0 14px;}
+  .angles{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .angle{font-size:.8rem; color:var(--teal); background:#e3f0ec; border:1px solid #bcdcd2; border-radius:999px;
+    padding:4px 12px; cursor:pointer; font-family:inherit;}
+  .angle:hover{background:var(--teal); color:#fff;}
+  textarea.focus{width:100%; min-height:74px; font:inherit; font-size:.88rem; padding:10px 12px;
+    border:1.5px solid var(--teal); border-radius:10px; resize:vertical; line-height:1.5;}
+  textarea.focus:focus{outline:none; border-color:var(--teal-dark);}
+  .oralfield{margin:0 0 13px;}
+  .oralfield > label{display:block; font-size:.78rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.03em; color:#3c4043; margin:0 0 5px;}
+  .oralfield .opt{font-weight:400; text-transform:none; letter-spacing:0; color:var(--muted);}
+  .oralfield .req{font-weight:700; text-transform:none; letter-spacing:0; color:var(--warn);}
+  .oralfield input{width:100%; font:inherit; font-size:.88rem; padding:9px 11px; border:1px solid var(--line);
+    border-radius:9px; background:#fff;}
+  .oralfield input:focus{outline:2px solid #cfe0db; border-color:var(--teal);}
+  .note{font-size:.76rem; color:var(--muted); margin-top:5px; line-height:1.5;}
+  .qrow{display:flex; align-items:flex-start; gap:9px; padding:9px 10px; border:1px solid var(--line);
+    border-radius:9px; background:#fff; margin:0 0 8px;}
+  .qrow.off{opacity:.5; background:#f6f8f7;}
+  .qrow input[type=checkbox]{margin-top:5px; width:15px; height:15px; flex-shrink:0; accent-color:var(--teal); cursor:pointer;}
+  .qrow textarea{flex:1; min-width:0; border:none; resize:none; overflow:hidden; display:block; font:inherit;
+    font-size:.88rem; line-height:1.5; background:transparent; outline:none; padding:2px 0;}
+  .qtag{font-size:.66rem; font-weight:700; color:#b06000; background:#fdf0d8; border-radius:8px; padding:2px 7px;
+    flex-shrink:0; margin-top:4px;}
+  .qrm{background:none; border:none; color:var(--warn); font-size:17px; line-height:1; cursor:pointer;
+    flex-shrink:0; padding:2px 4px;}
+  .sendbar{background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px; margin:0 0 14px; box-shadow:var(--shadow);}
+  .recipients{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 10px;}
+  .recipients .oralfield{margin:0;}
+  .recipients .full{grid-column:1 / -1;}
+  @media (max-width:640px){ .recipients{grid-template-columns:1fr;} }
+  .stage2footer{display:flex; gap:8px; align-items:center;}
+  .stage2footer .btn.primary{flex:1;}
+  .trimhint{display:none; font-size:.8rem; color:#8a6d1f; background:#fffaf0; border:1px solid #ecdfb8;
+    border-radius:8px; padding:7px 10px; margin-top:9px; line-height:1.5;}
+  .success{font-size:.9rem; font-weight:700; color:#137333; background:#e6f4ea; border:1px solid #b7e0c2;
+    border-radius:9px; padding:11px 13px; margin:0 0 14px;}
+  .copyrow{display:flex; gap:8px; align-items:flex-start;}
+  .copyrow input{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:.8rem;}
+  textarea.emailbody{width:100%; min-height:150px; font-family:ui-monospace,Menlo,monospace; font-size:.8rem;
+    line-height:1.5; padding:10px; border:1px solid var(--line); border-radius:9px; background:#fafbfc;
+    resize:vertical; margin:8px 0;}
+  .qlistlabel{font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:#3c4043; margin:0 0 8px;}
+  .qlistlabel .opt{font-weight:400; text-transform:none; letter-spacing:0; color:var(--muted);}
+  .miniactions{display:flex; gap:8px; margin:4px 0 0;}
+
+  /* modals */
+  .modal{position:fixed; inset:0; background:rgba(26,34,53,.45); display:none; align-items:flex-start;
+    justify-content:center; z-index:50; padding:6vh 16px;}
+  .modal.open{display:flex;}
+  .modal .box{background:#fff; border-radius:14px; box-shadow:0 18px 60px rgba(26,34,53,.3);
+    max-width:520px; width:100%; max-height:82vh; overflow-y:auto; padding:22px;}
+  .modal h2{font-family:"Lora",serif; font-size:1.2rem; margin:0 0 4px;}
+  .modal .sub{font-size:.85rem; color:var(--muted); margin:0 0 16px;}
+  .packs{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:0 0 14px;}
+  @media (max-width:520px){ .packs{grid-template-columns:1fr;} }
+  .pack{border:1px solid var(--line); border-radius:11px; padding:13px 12px; text-align:center; cursor:pointer; background:#fff;}
+  .pack:hover{border-color:var(--teal); background:#f4faf8;}
+  .pack .qty{font-family:"Lora",serif; font-weight:700; font-size:1.25rem; color:var(--teal-dark);}
+  .pack .price{font-weight:700; margin:2px 0;}
+  .pack .per{font-size:.74rem; color:var(--muted);}
+  .modal .fineprint{font-size:.76rem; color:var(--muted); line-height:1.55;}
+  .modalfoot{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap;}
+  .reportrow{display:flex; align-items:center; gap:12px; padding:11px 13px; border:1px solid var(--line);
+    border-radius:10px; margin:0 0 8px; background:#fff;}
+  .reportrow .info{flex:1; min-width:0;}
+  .reportrow .rt{font-size:.86rem; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
+  .reportrow .rm{font-size:.76rem; color:var(--muted);}
+  .chip{font-size:.66rem; font-weight:700; border-radius:999px; padding:2px 8px; white-space:nowrap;
+    background:#e7f3f0; color:#14463d;}
+  .none{font-size:.84rem; color:var(--muted); background:#f6f8f7; border-radius:9px; padding:11px 13px;}
+  .sectionlabel{font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--muted); margin:16px 0 8px;}
+  .warnbox{font-size:.78rem; color:#8a6d1f; background:#fffaf0; border-left:3px solid var(--gold);
+    border-radius:6px; padding:9px 12px; margin-top:14px; line-height:1.55;}
+  .foot{margin-top:26px; font-size:.8rem; color:#9aa2ae; text-align:center; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <div class="brand">
+      <img src="https://papertrailacademic.com/icon128.png" alt="" />
+      <div class="name">PaperTrail <span>Academic</span></div>
+    </div>
+    <div class="who" id="who" hidden>
+      <button class="tokenchip" id="tokenChip" title="PaperTrail Tokens — click to top up">🪙 <span id="tokenCount">…</span> Tokens</button>
+      <button class="btn ghost" id="recentBtn">🕘 Reports</button>
+      <span id="whoEmail"></span>
+      <button class="btn ghost" id="signout">Sign out</button>
+    </div>
+  </header>
+
+  <!-- SIGN-IN / SIGN-UP -->
+  <section class="signin card" id="signinCard" hidden>
+    <div class="pad">
+      <div class="rule"></div>
+      <h1 id="authTitle">Teacher sign-in</h1>
+      <p class="lede" id="authLede">Verify and Oral Defense for teachers — no extension needed.
+        Already use the PaperTrail extension? Sign in with the same account.</p>
+      <div class="msg" id="authMsg"></div>
+      <form id="pwForm">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required />
+        </div>
+        <button class="btn primary" style="width:100%" id="pwBtn" type="submit">Sign in</button>
+      </form>
+      <div style="text-align:center;margin-top:10px">
+        <button class="link" id="forgot" type="button">Forgot password?</button>
+      </div>
+      <div class="or">or</div>
+      <button class="btn gbtn" id="googleBtn" type="button">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" />
+        Continue with Google
+      </button>
+      <div class="authswitch" id="authSwitch">
+        New to PaperTrail? <button class="link" id="modeToggle" type="button">Create an account</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP -->
+  <section id="app" hidden>
+    <div class="rule"></div>
+    <h1>Teacher tools</h1>
+    <p class="lede">Paste a student's work, run an analysis, have a better conversation.
+      Every report describes <b>how</b> a piece was written — never who wrote it. No score, no verdict.</p>
+
+    <details class="metadata" id="metaDetails">
+      <summary>📋 Report details <span class="hint">— optional, printed on the report</span></summary>
+      <div class="metagrid">
+        <div class="field"><label for="m-student">Student name</label><input id="m-student" type="text" /></div>
+        <div class="field"><label for="m-sid">Student ID</label><input id="m-sid" type="text" /></div>
+        <div class="field"><label for="m-teacher">Teacher</label><input id="m-teacher" type="text" /></div>
+        <div class="field"><label for="m-course">Course</label><input id="m-course" type="text" /></div>
+        <div class="field"><label for="m-assign">Assignment</label><input id="m-assign" type="text" /></div>
+        <div class="field"><label for="m-date">Date</label><input id="m-date" type="text" placeholder="Today" /></div>
+      </div>
+    </details>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-mode="vsingle" role="tab">🔬 Verify Single</button>
+      <button class="tab" data-mode="vcompare" role="tab">⚖️ Verify Compare</button>
+      <button class="tab" data-mode="oral" role="tab">🎙️ Oral Defense</button>
+    </div>
+
+    <!-- VERIFY SINGLE -->
+    <div class="pane active" id="pane-vsingle">
+      <div class="intro"><b>Consistency Report.</b> The submitted work is read in ~150-word chunks and
+        measured on six dimensions per chunk — register, vocabulary, sentence complexity, argument depth,
+        error density, cohesion — with a heatmap of where the writing shifts. Text is sent for analysis and
+        not retained afterward. <b>Costs 1 PaperTrail Token.</b></div>
+      <div id="host-vsingle-sub"></div>
+      <div class="runbar">
+        <button class="btn primary" id="run-vsingle">🔬 Run Verify Single — 1 Token</button>
+        <span class="status" id="status-vsingle"></span>
+      </div>
+    </div>
+
+    <!-- VERIFY COMPARE -->
+    <div class="pane" id="pane-vcompare">
+      <div class="intro"><b>Baseline Deviation Report.</b> The submitted work is compared against a
+        controlled sample of the same student's known writing across eleven stylistic dimensions, each rated
+        Within Range / Notable / Anomalous — with side-by-side passages of interest and suggested discussion
+        questions. Stylometric scores are computed in your browser and sent as anchors. <b>Costs 1 PaperTrail Token.</b></div>
+      <div class="cols">
+        <div class="col">
+          <div class="colhdr"><span class="t">Controlled sample <span style="font-weight:400;color:var(--muted)">— their known writing</span></span><span class="wc bad" id="wc-ctrl">0 words</span></div>
+          <textarea class="sample" id="ctrlText" placeholder="Paste writing you know is the student's own — an in-class essay, an earlier assignment, a supervised piece. Minimum 500 words."></textarea>
+        </div>
+        <div class="col" id="host-vcompare-sub"></div>
+      </div>
+      <div class="runbar">
+        <button class="btn primary" id="run-vcompare">⚖️ Run Verify Compare — 1 Token</button>
+        <span class="status" id="status-vcompare"></span>
+      </div>
+    </div>
+
+    <!-- ORAL DEFENSE -->
+    <div class="pane" id="pane-oral">
+      <!-- Stage 1 — setup -->
+      <div id="oral-stage1">
+        <div class="steps">
+          <div class="step"><span class="n">1</span><div class="t">Generate <span class="cost">· 1 token</span></div><div class="s">Draft a question pool you curate</div></div>
+          <div class="step"><span class="n">2</span><div class="t">Send <span class="cost">· 1 token</span></div><div class="s">Student records spoken answers</div></div>
+          <div class="step rep"><span class="n">3</span><div class="t">Report</div><div class="s">Comes back to you when they finish</div></div>
+        </div>
+        <div class="payoff">The send token also returns a <strong>report to you</strong> on how the student
+          accounted for their own writing — described, never judged. No score, no verdict.</div>
+        <div class="oralfield">
+          <label>Topics you want to ask about <span class="opt">(optional)</span></label>
+          <textarea class="focus" id="oral-focus" placeholder="Name the parts you most want the student to account for. One question will aim at each. Leave blank for a balanced set across the essay."></textarea>
+          <div class="angles" id="oral-angles">
+            <button type="button" class="angle" data-v="the introduction">+ introduction</button>
+            <button type="button" class="angle" data-v="the main argument">+ main argument</button>
+            <button type="button" class="angle" data-v="the use of evidence">+ use of evidence</button>
+            <button type="button" class="angle" data-v="the counterargument">+ counterargument</button>
+            <button type="button" class="angle" data-v="the conclusion">+ conclusion</button>
+          </div>
+          <div class="note">We'll aim at least one question at each topic you name.</div>
+        </div>
+        <div class="oralfield">
+          <label>Essay title <span class="opt">(optional — shown to the student)</span></label>
+          <input id="oral-title" type="text" placeholder="A short label the student will see" />
+        </div>
+        <div id="host-oral-sub" style="margin:0 0 4px;"></div>
+        <div class="note" style="margin-bottom:10px;">Minimum 500 words. The student is given the essay to
+          reference; only the questions are withheld until they begin.</div>
+        <div class="errline" id="oral-err1"></div>
+        <div class="runbar">
+          <button class="btn primary" id="oral-generate" disabled>Generate questions — 1 Token</button>
+          <a class="link" href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener" style="font-size:.84rem;">Your sessions &amp; reports →</a>
+        </div>
+      </div>
+
+      <!-- Stage 2 — curate + send -->
+      <div id="oral-stage2" style="display:none;">
+        <div class="intro">Review the questions below and edit any that need it. We suggest sending your
+          <strong>4–6 strongest</strong> — each is a spoken answer of up to 2 minutes, so even six adds up.
+          Editing, removing, and adding your own are free.</div>
+        <div class="sendbar">
+          <div class="recipients">
+            <div class="oralfield full"><label>Student full name <span class="req">required</span></label>
+              <input id="oral-studentname" type="text" placeholder="First and last name" /></div>
+            <div class="oralfield"><label>Student email <span class="req">required</span></label>
+              <input id="oral-email" type="email" placeholder="student@school.edu" /></div>
+            <div class="oralfield"><label>Student ID <span class="opt">(optional)</span></label>
+              <input id="oral-studentid" type="text" placeholder="Optional" /></div>
+            <div class="oralfield full"><label>Your name <span class="opt">(optional — shown to the student)</span></label>
+              <input id="oral-teacher" type="text" placeholder="Optional" /></div>
+          </div>
+          <div class="errline" id="oral-err2"></div>
+          <div class="stage2footer" style="margin-top:12px;">
+            <button class="btn" id="oral-back">← Back</button>
+            <button class="btn primary" id="oral-send" disabled><span id="oral-send-count">0</span> selected · Generate link — 1 Token</button>
+          </div>
+          <div class="trimhint" id="oral-trim">That's a lot to ask — consider trimming to your 4–6 best.</div>
+        </div>
+        <div class="qlistlabel">Your questions <span class="opt">— edit any wording, deselect, or remove</span></div>
+        <div id="oral-qlist"></div>
+        <div class="miniactions">
+          <button class="btn" id="oral-addq">+ Add your own</button>
+          <button class="btn" id="oral-regen" title="Generates a fresh pool — charges 1 Token">↻ Regenerate — 1 Token</button>
+        </div>
+      </div>
+
+      <!-- Stage 3 — done -->
+      <div id="oral-stage3" style="display:none;">
+        <div class="success">✓ Session created — 1 PaperTrail Token charged to send. The student link is ready.</div>
+        <div class="oralfield">
+          <label>Student link <span class="opt">(expires in 7 days)</span></label>
+          <div class="copyrow">
+            <input id="oral-link" type="text" readonly />
+            <button class="btn" id="oral-copylink">Copy</button>
+          </div>
+        </div>
+        <div class="oralfield">
+          <label>Email to send <span class="opt">(send from your own email so it comes from you)</span></label>
+          <input id="oral-subject" type="text" readonly style="font-family:ui-monospace,Menlo,monospace;font-size:.8rem;" />
+          <textarea class="emailbody" id="oral-body" readonly></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn primary" id="oral-gmail">✉ Open in Gmail</button>
+            <button class="btn" id="oral-copyemail">Copy email</button>
+          </div>
+          <div class="note">Opens a Gmail draft to the student with everything filled in — just review and
+            hit Send. Not on Gmail? Use "Copy email".</div>
+        </div>
+        <div class="runbar">
+          <button class="btn" id="oral-another">Create another</button>
+          <a class="link" href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener" style="font-size:.84rem;">Your sessions &amp; reports →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="errline" id="appErr"></div>
+
+    <div class="foot">Verify text is analyzed and not retained · Oral reports are kept 90 days on your
+      <a href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener">dashboard</a> ·
+      Working in Google Docs? The <a href="https://papertrailacademic.com" target="_blank" rel="noopener">PaperTrail extension</a>
+      adds revision history, StyleMatch, and one-click loading from Classroom.</div>
+  </section>
+</div>
+
+<!-- PRICING MODAL -->
+<div class="modal" id="pricingModal">
+  <div class="box">
+    <h2>🪙 PaperTrail Tokens</h2>
+    <p class="sub">One shared wallet. Verify reports cost 1 token each; an Oral Defense costs 2
+      (1 to generate questions, 1 to send).</p>
+    <div class="packs">
+      <button class="pack" data-pack="verify-s"><div class="qty">10</div><div class="price">$6</div><div class="per">$0.60 / token</div></button>
+      <button class="pack" data-pack="verify-m"><div class="qty">35</div><div class="price">$18</div><div class="per">$0.51 / token</div></button>
+      <button class="pack" data-pack="verify-l"><div class="qty">100</div><div class="price">$45</div><div class="per">$0.45 / token</div></button>
+    </div>
+    <p class="fineprint">Checkout opens in a new tab (Lemon Squeezy). Tokens usually land within a minute
+      of purchase — use the refresh button below if your balance hasn't updated.</p>
+    <div class="modalfoot">
+      <button class="btn" id="refreshBalance">↻ Refresh balance</button>
+      <button class="btn" id="pricingClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECENT REPORTS MODAL -->
+<div class="modal" id="recentModal">
+  <div class="box">
+    <h2>🕘 Recent reports</h2>
+    <p class="sub">Verify reports are cached in this browser · Oral Defense reports live on your dashboard</p>
+    <div class="sectionlabel">🔬 Verify — this browser</div>
+    <div id="recentLocal"></div>
+    <div class="sectionlabel">🎙️ Oral Defense — your dashboard</div>
+    <div id="recentOral"><div class="none">Loading…</div></div>
+    <div class="warnbox">⚠ Cached Verify reports are saved locally on this device only — clearing browser
+      data removes them; use the report's Print / Save button for a permanent copy. Oral Defense reports are
+      kept on your <a href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener">dashboard</a> for 90 days.</div>
+    <div class="modalfoot"><span></span><button class="btn" id="recentClose">Close</button></div>
+  </div>
+</div>
+
+<script src="/lib/stylematch.js"></script>
+<script src="/lib/reports.js"></script>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const SUPABASE_URL = 'https://ktzrdhiqhidexunucuqp.supabase.co'
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0enJkaGlxaGlkZXh1bnVjdXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTQ2ODMsImV4cCI6MjA4ODE5MDY4M30.24Gbyh0C-wbDqQ31MD-ttXoCfLwjcWvjs9-UXAaqmHU'
+const VERIFY_EDGE_URL = SUPABASE_URL + '/functions/v1/generate-report'
+const ORAL_DASH = 'https://oral.papertrailacademic.com/dashboard'
+const ORAL_REPORT_BASE = 'https://oral.papertrailacademic.com/report/'
+
+// Lemon Squeezy checkout — same live URLs the extension uses (auth.js)
+const CHECKOUT_URLS = {
+  'verify-s': 'https://papertrailacademic.lemonsqueezy.com/checkout/buy/bb899eea-e9af-47ac-a757-052c5f189e8b',
+  'verify-m': 'https://papertrailacademic.lemonsqueezy.com/checkout/buy/bb899eea-e9af-47ac-a757-052c5f189e8b',
+  'verify-l': 'https://papertrailacademic.lemonsqueezy.com/checkout/buy/bb899eea-e9af-47ac-a757-052c5f189e8b',
+}
+
+const MIN_WORDS = 500
+const MAX_QUESTIONS = 10
+const MAX_Q_CHARS = 500
+const RECENT_KEY = 'pt_app_recent_reports'
+
+const smWords = window.__wpaStyleMatch.smWords
+const smComputeScores = window.__wpaStyleMatch.smComputeScores
+const buildVerifyReportHTML = window.__wpaReports.smBuildVerifyReportHTML
+
+const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
+})
+
+const $ = (id) => document.getElementById(id)
+const appErr = $('appErr')
+let currentUserId = null
+let verifyRunning = false
+// Oral state — declared up here because updateOralGenState() runs during initial
+// updateWC() at load; a later `let` would TDZ-crash the whole module.
+let pool = []
+let essayTitle = ''
+
+function showErr(node, html) { node.innerHTML = html; node.style.display = 'block' }
+function hideErr(node) { node.innerHTML = ''; node.style.display = 'none' }
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+async function getToken() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session ? session.access_token : null
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+const signinCard = $('signinCard'), app = $('app'), who = $('who')
+const authMsg = $('authMsg')
+let signupMode = false
+
+function showMsg(text, kind) { authMsg.textContent = text; authMsg.className = 'msg ' + (kind || 'err') }
+function clearMsg() { authMsg.className = 'msg'; authMsg.textContent = '' }
+
+function applyAuthMode() {
+  $('authTitle').textContent = signupMode ? 'Create your account' : 'Teacher sign-in'
+  $('pwBtn').textContent = signupMode ? 'Create account' : 'Sign in'
+  $('password').autocomplete = signupMode ? 'new-password' : 'current-password'
+  $('authSwitch').innerHTML = signupMode
+    ? 'Already have an account? <button class="link" id="modeToggle" type="button">Sign in</button>'
+    : 'New to PaperTrail? <button class="link" id="modeToggle" type="button">Create an account</button>'
+  $('modeToggle').addEventListener('click', () => { signupMode = !signupMode; clearMsg(); applyAuthMode() })
+}
+
+async function render() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    signinCard.hidden = false; app.hidden = true; who.hidden = true
+    currentUserId = null
+    return
+  }
+  signinCard.hidden = true; app.hidden = false; who.hidden = false
+  currentUserId = session.user.id
+  $('whoEmail').textContent = session.user.email || ''
+  refreshTokens()
+}
+
+$('pwForm').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  clearMsg()
+  const btn = $('pwBtn'); btn.disabled = true
+  const email = $('email').value.trim(), password = $('password').value
+  if (signupMode) {
+    const { error } = await supabase.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: location.origin + location.pathname },
+    })
+    btn.disabled = false
+    if (error) { showMsg(error.message || 'Could not create the account.', 'err'); return }
+    showMsg('Almost there — check your email for a confirmation link, then come back and sign in.', 'ok')
+    signupMode = false; applyAuthMode()
+  } else {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    btn.disabled = false
+    if (error) { showMsg(error.message || 'Could not sign in.', 'err'); return }
+    await render()
+  }
+})
+
+$('googleBtn').addEventListener('click', async () => {
+  clearMsg()
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: location.origin + location.pathname },
+  })
+  if (error) showMsg(error.message || 'Could not start Google sign-in.', 'err')
+})
+
+$('forgot').addEventListener('click', async () => {
+  clearMsg()
+  const email = $('email').value.trim()
+  if (!email) { showMsg('Enter your email above first, then tap "Forgot password?".', 'err'); return }
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + location.pathname,
+  })
+  if (error) showMsg(error.message || 'Could not send the reset email.', 'err')
+  else showMsg('If that email has an account, a password-reset link is on its way.', 'ok')
+})
+
+$('signout').addEventListener('click', async () => { await supabase.auth.signOut(); await render() })
+
+supabase.auth.onAuthStateChange(async (event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    const np = prompt('Set a new password (at least 6 characters):')
+    if (np && np.length >= 6) {
+      const { error } = await supabase.auth.updateUser({ password: np })
+      showMsg(error ? (error.message || 'Could not update password.') : 'Password updated — you are signed in.', error ? 'err' : 'ok')
+    }
+  }
+  render()
+})
+
+// ── Token wallet ─────────────────────────────────────────────────────────────
+async function fetchBalance() {
+  if (!currentUserId) return null
+  const { data, error } = await supabase.from('users').select('credit_balance').eq('id', currentUserId)
+  if (error || !data || !data[0]) return null
+  return data[0].credit_balance
+}
+async function refreshTokens() {
+  const bal = await fetchBalance()
+  $('tokenCount').textContent = (typeof bal === 'number') ? bal : '—'
+}
+$('tokenChip').addEventListener('click', () => openPricing())
+$('refreshBalance').addEventListener('click', async () => {
+  $('refreshBalance').textContent = '⏳ Checking…'
+  await refreshTokens()
+  $('refreshBalance').textContent = '↻ Refresh balance'
+})
+
+// ── Pricing modal ────────────────────────────────────────────────────────────
+function openPricing() { $('pricingModal').classList.add('open') }
+$('pricingClose').addEventListener('click', () => $('pricingModal').classList.remove('open'))
+document.querySelectorAll('.pack').forEach((p) => {
+  p.addEventListener('click', () => {
+    const base = CHECKOUT_URLS[p.getAttribute('data-pack')]
+    if (!base) return
+    const url = currentUserId ? base + '?checkout[custom][user_id]=' + encodeURIComponent(currentUserId) : base
+    window.open(url, '_blank', 'noopener')
+  })
+})
+
+// ── Shared Submitted Work column (reparents between panes, like the extension) ─
+const subCol = document.createElement('div')
+subCol.className = 'col'
+subCol.innerHTML = '<div class="colhdr"><span class="t">Submitted work <span style="font-weight:400;color:var(--muted)">— exactly what will be sent</span></span><span class="wc bad" id="wc-sub">0 words</span></div>' +
+  '<textarea class="sample" id="subText" placeholder="Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words."></textarea>' +
+  '<div class="paste-note">Tip: remove identifying information you don\'t need in the analysis.</div>'
+
+function wordCountOf(id) {
+  const t = $(id).value.trim()
+  return t ? smWords(t).length : 0
+}
+function updateWC() {
+  const n = wordCountOf('subText')
+  const wc = $('wc-sub')
+  wc.textContent = n + ' words'
+  wc.className = 'wc ' + (n >= MIN_WORDS ? 'ok' : 'bad')
+  const nc = wordCountOf('ctrlText')
+  const wcc = $('wc-ctrl')
+  wcc.textContent = nc + ' words'
+  wcc.className = 'wc ' + (nc >= MIN_WORDS ? 'ok' : 'bad')
+  updateOralGenState()
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+const HOSTS = { vsingle: 'host-vsingle-sub', vcompare: 'host-vcompare-sub', oral: 'host-oral-sub' }
+function setMode(mode) {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.getAttribute('data-mode') === mode))
+  document.querySelectorAll('.pane').forEach((p) => p.classList.toggle('active', p.id === 'pane-' + mode))
+  $(HOSTS[mode]).appendChild(subCol) // the ONE submitted column travels with the mode
+  hideErr(appErr)
+}
+document.querySelectorAll('.tab').forEach((t) => {
+  t.addEventListener('click', () => setMode(t.getAttribute('data-mode')))
+})
+setMode('vsingle')
+$('subText').addEventListener('input', updateWC)
+$('ctrlText').addEventListener('input', updateWC)
+updateWC()
+
+function getMeta() {
+  return {
+    studentName: $('m-student').value.trim(),
+    studentId: $('m-sid').value.trim(),
+    teacherName: $('m-teacher').value.trim(),
+    course: $('m-course').value.trim(),
+    assignment: $('m-assign').value.trim(),
+    date: $('m-date').value.trim(),
+  }
+}
+
+// ── Recent reports (localStorage cache, extension parity) ───────────────────
+function readRecent() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || [] } catch { return [] }
+}
+function cacheReport(entry) {
+  try {
+    let recent = readRecent()
+    recent.unshift(entry)
+    if (recent.length > 5) recent = recent.slice(0, 5)
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent))
+  } catch { /* quota — cached copy is a nicety, not a requirement */ }
+}
+function openReportWindow(html, reportId) {
+  const rw = window.open('', '_blank', 'width=960,height=780,resizable=yes,scrollbars=yes')
+  if (!rw) { alert('Popup was blocked. Please allow popups for this site.'); return }
+  rw.document.write(html)
+  rw.document.close()
+  try {
+    const printBtn = rw.document.getElementById('verify-print-btn')
+    if (printBtn) printBtn.addEventListener('click', () => rw.print())
+    const saveBtn = rw.document.getElementById('verify-save-btn')
+    if (saveBtn) saveBtn.addEventListener('click', () => {
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const a = rw.document.createElement('a')
+      a.href = url; a.download = 'PaperTrail-Verify-' + (reportId || 'report') + '.html'
+      rw.document.body.appendChild(a); a.click(); rw.document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    })
+  } catch { /* popup may have been closed */ }
+}
+
+$('recentBtn').addEventListener('click', async () => {
+  const recent = readRecent()
+  $('recentLocal').innerHTML = recent.length
+    ? recent.map((r, i) => {
+        const title = [r.studentName, r.assignment].filter(Boolean).map(esc).join(' · ') || esc(r.reportId || 'Report ' + (i + 1))
+        return '<div class="reportrow"><div class="info">' +
+          '<div class="rt">' + title + ' <span class="chip">' + esc(r.type || 'Verify') + '</span></div>' +
+          '<div class="rm">' + esc(r.generated || '') + '</div></div>' +
+          '<button class="btn" data-idx="' + i + '">Open</button></div>'
+      }).join('')
+    : '<div class="none">No cached reports yet — Verify reports appear here after generation.</div>'
+  $('recentLocal').querySelectorAll('button[data-idx]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const entry = recent[parseInt(b.getAttribute('data-idx'), 10)]
+      if (entry && entry.html) openReportWindow(entry.html, entry.reportId)
+    })
+  })
+  $('recentModal').classList.add('open')
+
+  // Oral reports — RLS-scoped; failure shows a dashboard link, never an error
+  const slot = $('recentOral')
+  slot.innerHTML = '<div class="none">Loading…</div>'
+  const { data: rows, error } = await supabase
+    .from('oral_reports')
+    .select('id, created_at, oral_sessions(student_name)')
+    .order('created_at', { ascending: false })
+    .limit(5)
+  if (error || !rows) {
+    slot.innerHTML = '<div class="none">Could not load Oral Defense reports — open your <a href="' + ORAL_DASH + '" target="_blank" rel="noopener">dashboard →</a></div>'
+    return
+  }
+  if (!rows.length) {
+    slot.innerHTML = '<div class="none">No Oral Defense reports yet — they appear here when a student completes a session.</div>'
+    return
+  }
+  slot.innerHTML = rows.map((r) => {
+    const name = esc((r.oral_sessions && r.oral_sessions.student_name) || 'Student')
+    const when = r.created_at ? esc(new Date(r.created_at).toLocaleString()) : ''
+    return '<div class="reportrow"><div class="info">' +
+      '<div class="rt">' + name + ' <span class="chip">Oral Defense</span></div>' +
+      '<div class="rm">' + when + '</div></div>' +
+      '<a class="btn" href="' + ORAL_REPORT_BASE + encodeURIComponent(r.id) + '" target="_blank" rel="noopener">Open ↗</a></div>'
+  }).join('')
+})
+$('recentClose').addEventListener('click', () => $('recentModal').classList.remove('open'))
+
+// ── Verify: loading + error popup screens (ported from the extension) ────────
+function verifyLoadingHTML(comparative) {
+  const heading = comparative ? 'Comparing writing samples…' : 'Analyzing writing sample…'
+  const bodyCopy = comparative
+    ? 'is comparing your two samples across eleven stylometric dimensions and producing a baseline deviation analysis. This typically takes one to two minutes.'
+    : 'is reading your document chunk by chunk and producing a stylometric measurement for each section. Short documents complete in about a minute; longer documents (3,000+ words) can take three to five minutes.'
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PaperTrail Verify — Analyzing…</title>' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"DM Sans",Arial,sans-serif;background:#f0f4f9;display:flex;align-items:center;justify-content:center;min-height:100vh;}' +
+    '.wrap{text-align:center;padding:40px;max-width:380px;}' +
+    '.spinner{width:44px;height:44px;border:4px solid #e8eaed;border-top-color:#2a7a6b;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 24px;}' +
+    '@keyframes spin{to{transform:rotate(360deg)}}h2{font-size:18px;color:#202124;margin-bottom:10px;}' +
+    'p{font-size:13px;color:#5f6368;line-height:1.6;max-width:320px;margin:0 auto 16px;}' +
+    '.warn{background:#fce8e6;border:1px solid #f5c6c2;border-radius:8px;padding:12px 16px;margin-top:16px;display:flex;align-items:flex-start;gap:10px;text-align:left;}' +
+    '.warn-icon{font-size:18px;flex-shrink:0;line-height:1.3;}' +
+    '.warn-text{font-size:12px;color:#c5221f;font-weight:700;line-height:1.5;}' +
+    '.warn-sub{font-size:11px;color:#d93025;font-weight:400;margin-top:2px;}' +
+    '</style></head><body><div class="wrap"><div class="spinner"></div><h2>' + heading + '</h2>' +
+    '<p>PaperTrail <em style="color:#2a7a6b;font-style:normal;font-weight:700;">Verify</em> ' + bodyCopy + '</p>' +
+    '<div class="warn"><span class="warn-icon">⚠️</span><div><div class="warn-text">Do not close this window.</div>' +
+    '<div class="warn-sub">Analysis is in progress. Closing this window will not stop the analysis or use up an extra token. Wait for the report to appear.</div></div></div>' +
+    '</div></body></html>'
+}
+function verifyErrorHTML(title, message) {
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PaperTrail Verify — Error</title>' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"DM Sans",Arial,sans-serif;background:#f0f4f9;display:flex;align-items:center;justify-content:center;min-height:100vh;}' +
+    '.wrap{text-align:center;padding:40px;max-width:400px;}.icon{font-size:40px;margin-bottom:16px;}' +
+    'h2{font-size:18px;color:#202124;margin-bottom:10px;}p{font-size:13px;color:#5f6368;line-height:1.6;margin-bottom:20px;white-space:pre-line;}' +
+    '</style></head><body><div class="wrap"><div class="icon">⚠️</div><h2>' + esc(title) + '</h2><p>' + esc(message) + '</p></div></body></html>'
+}
+function showSlowPhaseUI(pw) {
+  if (!pw || pw.closed) return
+  try {
+    const doc = pw.document
+    const h2 = doc.querySelector('h2'); const p = doc.querySelector('p'); const warn = doc.querySelector('.warn')
+    if (h2) h2.textContent = 'Still analyzing — almost there…'
+    if (p) p.innerHTML = 'This document is taking longer than typical. PaperTrail <em style="color:#2a7a6b;font-style:normal;font-weight:700;">Verify</em> is still working — the report will appear here automatically when it completes. No need to retry; your PaperTrail Token has not yet been charged.'
+    if (warn) {
+      warn.innerHTML = '<span class="warn-icon" style="color:#1967d2">ℹ️</span><div><div class="warn-text" style="color:#1967d2">Still generating in the background.</div><div class="warn-sub" style="color:#1967d2">Keep this window open. The report will render automatically.</div></div>'
+      warn.style.background = '#e8f0fe'; warn.style.borderColor = '#aecbfa'
+    }
+  } catch { /* cross-window access may fail after close */ }
+}
+
+// ── Verify flow (ported from verify.js: 202 + two-phase poll + privacy PATCH) ─
+async function runVerify(comparative) {
+  if (verifyRunning) return
+  hideErr(appErr)
+
+  const tB = $('subText').value.trim()
+  const tA = comparative ? $('ctrlText').value.trim() : ''
+  if (!tB || smWords(tB).length < MIN_WORDS) {
+    showErr(appErr, 'Verify needs at least ' + MIN_WORDS + ' words in the Submitted Work.')
+    return
+  }
+  if (comparative && (!tA || smWords(tA).length < MIN_WORDS)) {
+    showErr(appErr, 'Verify Compare needs at least ' + MIN_WORDS + ' words in the Controlled Sample.')
+    return
+  }
+
+  const token = await getToken()
+  if (!token) { showErr(appErr, 'Please sign in again to run Verify.'); await render(); return }
+
+  // Fresh balance gate — server enforces too; this just avoids a wasted popup
+  const bal = await fetchBalance()
+  if (typeof bal === 'number' && bal < 1) { openPricing(); return }
+
+  verifyRunning = true
+  const meta = getMeta()
+  const runBtns = [$('run-vsingle'), $('run-vcompare')]
+  runBtns.forEach((b) => { b.disabled = true })
+  function done() { verifyRunning = false; runBtns.forEach((b) => { b.disabled = false }) }
+
+  const pw = window.open('', 'pt-verify-report', 'width=960,height=780,resizable=yes,scrollbars=yes')
+  if (!pw) { alert('Popup was blocked. Please allow popups for this site.'); done(); return }
+  pw.document.write(verifyLoadingHTML(comparative))
+  pw.document.close()
+
+  const body = {
+    sampleB: tB,
+    analysisMode: comparative ? 'comparative' : 'single',
+    metadata: meta,
+  }
+  if (comparative) {
+    body.sampleA = tA
+    body.algorithmicScores = smComputeScores(tA, tB) // browser-side, single source of truth
+  }
+
+  function renderError(title, message) {
+    if (pw && !pw.closed) {
+      pw.document.open(); pw.document.write(verifyErrorHTML(title, message)); pw.document.close()
+    }
+    done()
+  }
+  function renderSuccess(reportData) {
+    if (!pw || pw.closed) { done(); return }
+    const reportHTML = buildVerifyReportHTML(reportData, comparative, meta, '')
+    pw.document.open(); pw.document.write(reportHTML); pw.document.close()
+    cacheReport({
+      reportId: reportData.reportId || ('PT-' + Date.now()),
+      type: comparative ? 'Verify Compare' : 'Verify Single',
+      studentName: meta.studentName || '',
+      assignment: meta.assignment || '',
+      generated: new Date().toLocaleString(),
+      html: reportHTML,
+    })
+    refreshTokens()
+    try {
+      const printBtn = pw.document.getElementById('verify-print-btn')
+      if (printBtn) printBtn.addEventListener('click', () => pw.print())
+      const saveBtn = pw.document.getElementById('verify-save-btn')
+      if (saveBtn) saveBtn.addEventListener('click', () => {
+        const blob = new Blob([reportHTML], { type: 'text/html' })
+        const url = URL.createObjectURL(blob)
+        const a = pw.document.createElement('a')
+        a.href = url; a.download = 'PaperTrail-Verify-' + (reportData.reportId || 'report') + '.html'
+        pw.document.body.appendChild(a); a.click(); pw.document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      })
+    } catch { /* popup closed */ }
+    done()
+  }
+
+  function pollReport(reportId) {
+    const FAST_MS = 2000, SLOW_MS = 10000, FAST_MAX = 150, SLOW_MAX = 30
+    let phase = 'fast', attempts = 0, timer = null, finished = false
+    function finish(fn) { if (finished) return; finished = true; if (timer) clearInterval(timer); fn() }
+    function maxForPhase() { return phase === 'fast' ? FAST_MAX : SLOW_MAX }
+    function advanceOrGiveUp(reason) {
+      if (phase === 'fast') {
+        phase = 'slow'; attempts = 0
+        if (timer) clearInterval(timer)
+        showSlowPhaseUI(pw)
+        timer = setInterval(tick, SLOW_MS)
+        return
+      }
+      finish(() => {
+        renderError(
+          reason === 'network' ? 'Network Error' : 'Generation Taking Too Long',
+          reason === 'network'
+            ? 'Lost connection while waiting for the report. If your token was used, the report may appear under 🕘 Reports. Otherwise, please try again.'
+            : 'This document is taking unusually long to analyze. Your PaperTrail Token has not been charged. Please try again with a shorter sample.'
+        )
+      })
+    }
+    async function tick() {
+      if (!pw || pw.closed) { finish(done); return }
+      attempts++
+      let rows
+      try {
+        const activeToken = await getToken()
+        const r = await fetch(SUPABASE_URL + '/rest/v1/reports?id=eq.' + encodeURIComponent(reportId) + '&select=status,report_json,error_message', {
+          headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + activeToken },
+        })
+        rows = await r.json()
+      } catch {
+        if (attempts >= maxForPhase()) advanceOrGiveUp('network')
+        return
+      }
+      const row = rows && rows[0]
+      if (!row) { if (attempts >= maxForPhase()) advanceOrGiveUp('not_found'); return }
+      if (row.status === 'complete') {
+        const reportData = row.report_json
+        if (!reportData) {
+          finish(() => renderError('Report Expired', 'Your report finished generating but is no longer retrievable from the server. Please try again — your PaperTrail Token was already used.'))
+          return
+        }
+        if (!reportData.reportId) reportData.reportId = reportId
+        finish(() => renderSuccess(reportData))
+        // Privacy: null report_json immediately after successful fetch (best-effort;
+        // the pg_cron reaper catches anything that survives past 10 minutes)
+        try {
+          const activeToken = await getToken()
+          fetch(SUPABASE_URL + '/rest/v1/reports?id=eq.' + encodeURIComponent(reportId), {
+            method: 'PATCH',
+            headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + activeToken, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+            body: JSON.stringify({ report_json: null }),
+          }).catch(() => {})
+        } catch { /* best-effort */ }
+      } else if (row.status === 'failed') {
+        finish(() => renderError('Analysis Failed', row.error_message || 'Report generation failed. Your PaperTrail Token was not charged.'))
+      } else if (attempts >= maxForPhase()) {
+        advanceOrGiveUp('pending')
+      }
+    }
+    tick()
+    timer = setInterval(tick, FAST_MS)
+  }
+
+  let result
+  try {
+    const res = await fetch(VERIFY_EDGE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + token },
+      body: JSON.stringify(body),
+    })
+    result = { status: res.status, data: await res.json().catch(() => ({})) }
+  } catch {
+    renderError('Connection Error', 'Could not reach the Verify service — your PaperTrail Token was not charged. Check your internet connection and try again.')
+    return
+  }
+  if (!pw || pw.closed) { done(); return }
+  const { status, data } = result
+  if (status === 401) { renderError('Session Expired', 'Your session has expired. Close this window, sign in again, then retry Verify.'); return }
+  if (status === 402) { renderError('No PaperTrail Tokens', 'You have no PaperTrail Tokens remaining. Purchase more to continue.'); openPricing(); return }
+  if (data && data.error) { renderError('Analysis Error', data.error + (data.debug ? '\n\nDetail: ' + data.debug : '')); return }
+  if (status === 202 && data && data.reportId) { pollReport(data.reportId); return }
+  if (status === 200 && data && (data.report || data.reportId)) {
+    const reportData = data.report || data
+    if (!reportData.reportId && data.reportId) reportData.reportId = data.reportId
+    renderSuccess(reportData)
+    return
+  }
+  renderError('Unexpected Response', 'The Verify service returned an unexpected response. Your PaperTrail Token was not charged. Please try again.')
+}
+
+$('run-vsingle').addEventListener('click', () => runVerify(false))
+$('run-vcompare').addEventListener('click', () => runVerify(true))
+
+// ── Oral Defense (ported from oral.js: pool-aware Back, cap 10, 1+1 tokens) ──
+async function oralFetch(path, payload) {
+  const token = await getToken()
+  if (!token) return { notAuthed: true }
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/' + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + token },
+      body: JSON.stringify(payload),
+    })
+    const j = await r.json().catch(() => ({}))
+    return { status: r.status, body: j }
+  } catch { return { networkError: true } }
+}
+
+function showOralStage(n) {
+  $('oral-stage1').style.display = n === 1 ? 'block' : 'none'
+  $('oral-stage2').style.display = n === 2 ? 'block' : 'none'
+  $('oral-stage3').style.display = n === 3 ? 'block' : 'none'
+  if (n === 2) sizeAllQTAs() // rows rendered while hidden have scrollHeight 0
+}
+
+document.querySelectorAll('#oral-angles .angle').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const ta = $('oral-focus')
+    const v = btn.getAttribute('data-v') || ''
+    const cur = ta.value.trim().replace(/[,\s]+$/, '')
+    if (cur && cur.toLowerCase().includes(v.toLowerCase())) { ta.focus(); return }
+    ta.value = cur ? cur + ', ' + v : v
+    ta.focus()
+  })
+})
+
+function updateOralGenState() {
+  const gen = $('oral-generate')
+  if (!gen) return
+  const n = wordCountOf('subText')
+  if (pool.length) {
+    // A pool already exists (teacher pressed ← Back) — continuing is FREE;
+    // those questions are generated and paid for. Never re-charge for it.
+    gen.textContent = 'Continue to your questions →'
+    gen.disabled = false
+  } else {
+    gen.textContent = 'Generate questions — 1 Token'
+    gen.disabled = n < MIN_WORDS
+  }
+}
+
+function sizeQTA(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px' }
+function sizeAllQTAs() { document.querySelectorAll('#oral-qlist textarea').forEach(sizeQTA) }
+
+function renderQList() {
+  const list = $('oral-qlist')
+  list.innerHTML = ''
+  pool.forEach((item) => {
+    const row = document.createElement('div')
+    row.className = 'qrow' + (item.selected ? '' : ' off')
+    const cb = document.createElement('input')
+    cb.type = 'checkbox'; cb.checked = !!item.selected
+    cb.addEventListener('change', () => { item.selected = cb.checked; row.classList.toggle('off', !cb.checked); updateSendState() })
+    const ta = document.createElement('textarea')
+    ta.value = item.question; ta.rows = 1; ta.maxLength = MAX_Q_CHARS
+    ta.addEventListener('input', () => { item.question = ta.value; sizeQTA(ta); updateSendState() })
+    const rm = document.createElement('button')
+    rm.className = 'qrm'; rm.type = 'button'; rm.title = 'Remove this question'; rm.textContent = '×'
+    rm.addEventListener('click', () => {
+      const i = pool.indexOf(item)
+      if (i > -1) pool.splice(i, 1)
+      renderQList(); updateSendState()
+    })
+    row.appendChild(cb); row.appendChild(ta)
+    if (item.custom) {
+      const tag = document.createElement('span'); tag.className = 'qtag'; tag.textContent = 'custom'
+      row.appendChild(tag)
+    }
+    row.appendChild(rm)
+    list.appendChild(row)
+    sizeQTA(ta)
+  })
+  const addBtn = $('oral-addq')
+  const atMax = pool.length >= MAX_QUESTIONS
+  addBtn.disabled = atMax
+  addBtn.title = atMax ? 'Maximum of ' + MAX_QUESTIONS + ' questions' : 'Add a custom question'
+}
+
+function selectedQuestions() { return pool.filter((q) => q.selected && q.question.trim()) }
+const looksLikeEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s || '')
+
+function updateSendState() {
+  const sel = selectedQuestions()
+  const email = $('oral-email').value.trim()
+  const name = $('oral-studentname').value.trim()
+  $('oral-send-count').textContent = sel.length
+  $('oral-trim').style.display = sel.length > 6 ? 'block' : 'none' // soft nudge, never auto-cuts
+  $('oral-send').disabled = !(sel.length >= 1 && sel.length <= MAX_QUESTIONS && looksLikeEmail(email) && name.length > 0)
+}
+$('oral-email').addEventListener('input', updateSendState)
+$('oral-studentname').addEventListener('input', updateSendState)
+
+function prefillOralFromMeta() {
+  const m = getMeta()
+  const setIfEmpty = (id, val) => { const n = $(id); if (n && !n.value && val) n.value = val }
+  setIfEmpty('oral-title', m.assignment)
+  setIfEmpty('oral-teacher', m.teacherName)
+  setIfEmpty('oral-studentid', m.studentId)
+  setIfEmpty('oral-studentname', m.studentName)
+}
+
+async function doGenerate(isRegen) {
+  if (isRegen && !window.confirm('Regenerate a fresh question pool?\n\nThis charges 1 PaperTrail Token and replaces the current questions — any edits or questions you added will be lost.')) return
+  const err = $(isRegen ? 'oral-err2' : 'oral-err1')
+  const essay = $('subText').value.trim()
+  const n = essay ? smWords(essay).length : 0
+  if (n < MIN_WORDS) { showErr(err, 'The essay must be at least ' + MIN_WORDS + ' words (currently ' + n + ').'); return }
+  hideErr(err)
+  essayTitle = $('oral-title').value.trim()
+  const focus = $('oral-focus').value.trim()
+
+  const genBtn = $('oral-generate'), regBtn = $('oral-regen')
+  const active = isRegen ? regBtn : genBtn
+  genBtn.disabled = true; regBtn.disabled = true
+  const prevLabel = active.textContent
+  active.textContent = '⏳ Generating…'
+
+  const res = await oralFetch('oral-generate-questions', {
+    essayText: essay,
+    essayTitle: essayTitle || undefined,
+    focusTopics: focus || undefined,
+  })
+  regBtn.disabled = false
+  regBtn.textContent = '↻ Regenerate — 1 Token'
+  if (active === genBtn) genBtn.textContent = prevLabel
+  updateOralGenState()
+
+  if (res.notAuthed) { showErr(err, 'Please sign in again to use Oral Defense.'); return }
+  if (res.networkError) { showErr(err, 'Network error. Please check your connection and try again.'); return }
+  if (res.status === 402 || (res.body && res.body.code === 'insufficient_tokens')) {
+    showErr(err, (res.body && res.body.error ? esc(res.body.error) + ' ' : 'You need 1 PaperTrail Token to generate. '))
+    openPricing()
+    return
+  }
+  if (res.status >= 400 || !res.body || !res.body.questions) {
+    showErr(err, esc((res.body && res.body.error) || 'Could not generate questions. Please try again.'))
+    return
+  }
+  pool = (res.body.questions || [])
+    .map((q) => ({ question: (typeof q === 'string' ? q : q && q.question) || '', custom: false, selected: true }))
+    .filter((q) => q.question)
+  if (!pool.length) { showErr(err, 'No questions came back. Please try again.'); return }
+  refreshTokens() // a token was just spent — reflect the new balance
+  prefillOralFromMeta()
+  renderQList()
+  updateSendState()
+  updateOralGenState()
+  showOralStage(2)
+}
+
+$('oral-generate').addEventListener('click', () => {
+  // A pool in memory means this click is a free "continue" back into Curate
+  if (pool.length) { renderQList(); updateSendState(); showOralStage(2); return }
+  doGenerate(false)
+})
+$('oral-regen').addEventListener('click', () => doGenerate(true))
+$('oral-addq').addEventListener('click', () => {
+  if (pool.length >= MAX_QUESTIONS) return
+  pool.push({ question: '', custom: true, selected: true })
+  renderQList(); updateSendState()
+  const rows = document.querySelectorAll('#oral-qlist textarea')
+  if (rows.length) rows[rows.length - 1].focus()
+})
+$('oral-back').addEventListener('click', () => { showOralStage(1); updateOralGenState() })
+
+async function doSend() {
+  const err = $('oral-err2')
+  const sel = selectedQuestions()
+  const email = $('oral-email').value.trim()
+  const name = $('oral-studentname').value.trim()
+  if (!name) { showErr(err, 'Enter the student’s full name.'); return }
+  if (!looksLikeEmail(email)) { showErr(err, 'Enter a valid student email.'); return }
+  if (sel.length < 1) { showErr(err, 'Select at least one question to send.'); return }
+  if (sel.length > MAX_QUESTIONS) { showErr(err, 'You can send at most ' + MAX_QUESTIONS + ' questions.'); return }
+  if (sel.some((q) => q.question.trim().length > MAX_Q_CHARS)) { showErr(err, 'Questions must be ' + MAX_Q_CHARS + ' characters or fewer.'); return }
+  hideErr(err)
+
+  const send = $('oral-send')
+  const prevHTML = send.innerHTML
+  send.disabled = true
+  send.textContent = '⏳ Creating session…'
+
+  const res = await oralFetch('oral-create-session', {
+    essayText: $('subText').value.trim(),
+    essayTitle: essayTitle || undefined,
+    questions: sel.map((q) => ({ question: q.question.trim(), custom: !!q.custom })),
+    questionPool: pool.map((q) => q.question.trim()).filter(Boolean),
+    studentName: name,
+    studentEmail: email,
+    studentId: $('oral-studentid').value.trim() || undefined,
+    teacherName: $('oral-teacher').value.trim() || undefined,
+  })
+  send.disabled = false
+  send.innerHTML = prevHTML
+  updateSendState()
+
+  if (res.notAuthed) { showErr(err, 'Please sign in again to use Oral Defense.'); return }
+  if (res.networkError) { showErr(err, 'Network error. No tokens were charged. Please try again.'); return }
+  if (res.status === 402 || (res.body && res.body.code === 'insufficient_tokens')) {
+    showErr(err, (res.body && res.body.error ? esc(res.body.error) + ' ' : 'You need 1 PaperTrail Token to send. '))
+    openPricing()
+    return
+  }
+  if (res.status >= 400 || !res.body || !res.body.shareUrl) {
+    showErr(err, esc((res.body && res.body.error) || 'Could not create the session. No tokens were charged.'))
+    return
+  }
+  $('oral-link').value = res.body.shareUrl
+  const pm = res.body.prefilledMessage || {}
+  $('oral-subject').value = pm.subject || ''
+  $('oral-body').value = pm.body || ''
+  refreshTokens()
+  showOralStage(3)
+}
+$('oral-send').addEventListener('click', doSend)
+
+function flashCopy(btn, text) {
+  const prev = btn.textContent
+  btn.textContent = '✓ Copied'
+  setTimeout(() => { btn.textContent = prev }, 1800)
+  try { navigator.clipboard.writeText(text) } catch { /* clipboard may be blocked */ }
+}
+$('oral-copylink').addEventListener('click', () => flashCopy($('oral-copylink'), $('oral-link').value))
+$('oral-copyemail').addEventListener('click', () => flashCopy($('oral-copyemail'), $('oral-subject').value + '\n\n' + $('oral-body').value))
+$('oral-gmail').addEventListener('click', () => {
+  const to = $('oral-email').value.trim()
+  const subj = $('oral-subject').value || ''
+  let body = $('oral-body').value || ''
+  if (!body.trim()) body = 'Please record your spoken answers here:\n' + ($('oral-link').value || '')
+  const url = 'https://mail.google.com/mail/?view=cm&fs=1' +
+    '&to=' + encodeURIComponent(to) + '&su=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body)
+  window.open(url, '_blank', 'noopener')
+})
+$('oral-another').addEventListener('click', () => {
+  pool = []
+  essayTitle = ''
+  ;['oral-title', 'oral-focus', 'oral-email', 'oral-studentname', 'oral-studentid'].forEach((id) => { $(id).value = '' })
+  // keep teacher name — likely the same teacher next time
+  $('oral-qlist').innerHTML = ''
+  hideErr($('oral-err1')); hideErr($('oral-err2'))
+  updateOralGenState()
+  updateSendState()
+  showOralStage(1)
+})
+
+applyAuthMode()
+render()
+</script>
+</body>
+</html>
