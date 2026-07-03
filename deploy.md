@@ -82,6 +82,19 @@ Supabase → Authentication → URL Configuration:
 Teachers who originally signed up with Google can use **Forgot password?** on the dashboard to set
 a password, or just use the Google button.
 
+## Security headers (vercel.json)
+All routes ship HSTS, nosniff, X-Frame-Options DENY, Referrer-Policy no-referrer (session
+tokens and report ids live in URLs — never leak them via outbound links), a Permissions-Policy
+that allows ONLY the microphone (session.html recording) and denies camera/geolocation/payment,
+COOP same-origin-allow-popups, and a Content-Security-Policy. The CSP allowlist is exactly:
+self + esm.sh (supabase-js) for scripts, Google Fonts for styles/fonts, the Supabase project
+for connect/media (signed audio URLs, TTS blobs), papertrailacademic.com + gstatic for images.
+`'unsafe-inline'` for scripts is required by the inline module scripts and the report popup's
+inline handlers — the CSP still blocks any injected EXTERNAL script/exfil origin, plus framing
+and plugin content. ⚠ If a page adds a new external resource (CDN, image host, API), it must be
+added to the CSP or it will be silently blocked — check the browser console after deploying
+page changes.
+
 ## Notes
 - Backend lives in the **papertrail-verify** Supabase project (`ktzrdhiqhidexunucuqp`).
 - iOS Safari records `audio/mp4`; the page sends the blob's real MIME so the backend stores the
