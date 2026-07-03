@@ -33,8 +33,10 @@ Static site (no build step). This ONE repo/Vercel project serves TWO domains:
 - `lib/stylematch.js`, `lib/reports.js` — **verbatim copies of the extension modules**
   (`papertrail-3.4.0/stylematch.js`, `reports.js`). ⚠ When either changes in the extension,
   re-copy it here — treat the extension as the single source of truth.
-- `vercel.json` — host rewrite `app.papertrailacademic.com/` → `/app.html` (plus `/app` on any
-  host, for pre-DNS testing on the vercel.app URL); `/session/:token` → `/session.html`,
+- `vercel.json` — `app.papertrailacademic.com/` uses a host-conditioned **redirect** to `/app`
+  (NOT a rewrite: Vercel checks the filesystem before rewrites, so `/` always wins as
+  `index.html`; redirects run first). `/app` then rewrites to `/app.html` on any host — which is
+  also the pre-DNS test URL on vercel.app. Other rewrites: `/session/:token` → `/session.html`,
   `/report/:id` → `/report.html`, `/dashboard` → `/dashboard.html`.
 
 The dashboard/report pages read their data directly from Supabase under RLS
