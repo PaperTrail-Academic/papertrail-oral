@@ -75,12 +75,41 @@
   .metagrid .field input{padding:8px 10px; font-size:.88rem;}
   @media (max-width:640px){ .metagrid{grid-template-columns:1fr 1fr;} }
 
-  /* tabs */
-  .tabs{display:flex; gap:4px; border-bottom:2px solid var(--line); margin:0 0 16px; flex-wrap:wrap;}
-  .tab{font:inherit; font-weight:600; font-size:.92rem; color:var(--muted); background:none; border:none;
-    cursor:pointer; padding:10px 14px; border-bottom:3px solid transparent; margin-bottom:-2px; white-space:nowrap;}
-  .tab:hover{color:var(--ink);}
-  .tab.active{color:var(--teal-dark); border-bottom-color:var(--teal);}
+  /* shell: left sidebar + main */
+  .shell{display:flex; gap:22px; align-items:flex-start;}
+  nav.side{width:198px; flex-shrink:0; position:sticky; top:16px; display:flex; flex-direction:column; gap:3px;}
+  .sitem{display:flex; align-items:center; gap:9px; font:inherit; font-weight:600; font-size:.9rem;
+    color:var(--muted); background:none; border:none; border-radius:9px; cursor:pointer;
+    padding:9px 12px; text-align:left; text-decoration:none; width:100%;}
+  .sitem:hover{background:#eef1f5; color:var(--ink);}
+  .sitem.active{background:#e3f0ec; color:var(--teal-dark);}
+  .sgroup{font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em;
+    color:#9aa2ae; padding:14px 12px 4px;}
+  .main{flex:1; min-width:0;}
+  @media (max-width:760px){
+    .shell{flex-direction:column;}
+    nav.side{position:static; width:100%; flex-direction:row; flex-wrap:wrap; gap:4px;}
+    .sitem{width:auto;}
+    .sgroup{display:none;}
+  }
+
+  /* home cards */
+  .cards{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin:4px 0 18px;}
+  @media (max-width:860px){ .cards{grid-template-columns:1fr;} }
+  .tcard{display:flex; flex-direction:column; font:inherit; text-align:left; background:#fff;
+    border:1px solid var(--line); border-radius:14px; padding:18px; cursor:pointer;
+    box-shadow:var(--shadow); transition:border-color .12s, transform .12s;}
+  .tcard:hover{border-color:var(--teal); transform:translateY(-1px);}
+  .tcard .ticon{font-size:1.6rem; margin-bottom:8px;}
+  .tcard .tname{font-family:"Lora",serif; font-weight:700; font-size:1.08rem; margin:0 0 2px;}
+  .tcard .ttag{font-size:.8rem; font-style:italic; color:var(--teal-dark); margin:0 0 8px;}
+  .tcard p{font-size:.85rem; color:var(--muted); line-height:1.55; margin:0 0 14px; flex:1;}
+  .tcard .tmeta{display:flex; align-items:center; justify-content:space-between;}
+  .costchip{font-size:.74rem; font-weight:700; background:#fbf6e8; color:#8a6d1f;
+    border:1px solid #ecdcae; border-radius:999px; padding:3px 10px;}
+  .tcard .go{color:var(--teal); font-weight:700; font-size:.88rem;}
+  .homefoot{font-size:.82rem; color:var(--muted); line-height:1.6; background:#fff;
+    border:1px solid var(--line); border-radius:12px; padding:13px 16px;}
 
   /* panes */
   .pane{display:none;}
@@ -246,12 +275,63 @@
 
   <!-- APP -->
   <section id="app" hidden>
-    <div class="rule"></div>
-    <h1>Teacher tools</h1>
-    <p class="lede">Paste a student's work, run an analysis, have a better conversation.
-      Every report describes <b>how</b> a piece was written — never who wrote it. No score, no verdict.</p>
+    <div class="shell">
+      <nav class="side" id="sideNav">
+        <button class="sitem active" data-mode="home">🏠 Home</button>
+        <div class="sgroup">Tools</div>
+        <button class="sitem" data-mode="vsingle">🔬 Verify Single</button>
+        <button class="sitem" data-mode="vcompare">⚖️ Verify Compare</button>
+        <button class="sitem" data-mode="oral">🎙️ Oral Defense</button>
+        <div class="sgroup">Your work</div>
+        <button class="sitem" id="side-reports">🕘 Reports</button>
+        <a class="sitem" href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener">📂 Oral dashboard ↗</a>
+        <button class="sitem" id="side-tokens">🪙 Buy tokens</button>
+      </nav>
 
-    <details class="metadata" id="metaDetails">
+      <div class="main">
+
+    <!-- HOME -->
+    <div class="pane active" id="pane-home">
+      <div class="rule"></div>
+      <h1>What do you want to do?</h1>
+      <p class="lede">Paste a student's work, run an analysis, have a better conversation.
+        Every report describes <b>how</b> a piece was written — never who wrote it. No score, no verdict.</p>
+      <div class="cards">
+        <button class="tcard" data-goto="vsingle">
+          <div class="ticon">🔬</div>
+          <div class="tname">Verify Single</div>
+          <div class="ttag">"Something about this essay doesn't add up."</div>
+          <p>One essay on its own. Read in ~150-word chunks and measured on six dimensions —
+            register, vocabulary, sentence complexity, argument depth, error density, cohesion —
+            with a heatmap of where the writing shifts.</p>
+          <div class="tmeta"><span class="costchip">1 token</span><span class="go">Open →</span></div>
+        </button>
+        <button class="tcard" data-goto="vcompare">
+          <div class="ticon">⚖️</div>
+          <div class="tname">Verify Compare</div>
+          <div class="ttag">"This doesn't sound like them."</div>
+          <p>The submitted work against a controlled sample of the same student's known writing —
+            eleven stylistic dimensions, side-by-side passages of interest, and suggested
+            discussion questions.</p>
+          <div class="tmeta"><span class="costchip">1 token</span><span class="go">Open →</span></div>
+        </button>
+        <button class="tcard" data-goto="oral">
+          <div class="ticon">🎙️</div>
+          <div class="tname">Oral Defense</div>
+          <div class="ttag">"Walk me through the choices you made."</div>
+          <p>The student accounts for their writing out loud. You curate the questions; they're
+            hidden until the student begins, read aloud, one take each. A report on how they
+            accounted for their choices comes back to you.</p>
+          <div class="tmeta"><span class="costchip">2 tokens</span><span class="go">Open →</span></div>
+        </button>
+      </div>
+      <div class="homefoot">Working in Google Docs? The
+        <a href="https://papertrailacademic.com" target="_blank" rel="noopener">PaperTrail extension</a>
+        adds Inspect (revision history), StyleMatch, and one-click loading from Classroom —
+        same account, same token wallet.</div>
+    </div>
+
+    <details class="metadata" id="metaDetails" style="display:none;">
       <summary>📋 Report details <span class="hint">— optional, printed on the report</span></summary>
       <div class="metagrid">
         <div class="field"><label for="m-student">Student name</label><input id="m-student" type="text" /></div>
@@ -262,12 +342,6 @@
         <div class="field"><label for="m-date">Date</label><input id="m-date" type="text" placeholder="Today" /></div>
       </div>
     </details>
-
-    <div class="tabs" role="tablist">
-      <button class="tab active" data-mode="vsingle" role="tab">🔬 Verify Single</button>
-      <button class="tab" data-mode="vcompare" role="tab">⚖️ Verify Compare</button>
-      <button class="tab" data-mode="oral" role="tab">🎙️ Oral Defense</button>
-    </div>
 
     <!-- VERIFY SINGLE -->
     <div class="pane active" id="pane-vsingle">
@@ -398,6 +472,9 @@
     </div>
 
     <div class="errline" id="appErr"></div>
+
+      </div><!-- /.main -->
+    </div><!-- /.shell -->
 
     <div class="foot">Verify text is analyzed and not retained · Oral reports are kept 90 days on your
       <a href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener">dashboard</a> ·
@@ -631,18 +708,27 @@ function updateWC() {
   updateOralGenState()
 }
 
-// ── Tabs ─────────────────────────────────────────────────────────────────────
+// ── Sidebar navigation ───────────────────────────────────────────────────────
 const HOSTS = { vsingle: 'host-vsingle-sub', vcompare: 'host-vcompare-sub', oral: 'host-oral-sub' }
 function setMode(mode) {
-  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.getAttribute('data-mode') === mode))
+  document.querySelectorAll('.sitem[data-mode]').forEach((t) => t.classList.toggle('active', t.getAttribute('data-mode') === mode))
   document.querySelectorAll('.pane').forEach((p) => p.classList.toggle('active', p.id === 'pane-' + mode))
-  $(HOSTS[mode]).appendChild(subCol) // the ONE submitted column travels with the mode
+  $('metaDetails').style.display = mode === 'home' ? 'none' : 'block'
+  // The ONE submitted column travels with the mode. On 'home' it parks in the
+  // (hidden) vsingle pane so it is never detached — getElementById('subText')
+  // and the word-count badge must keep resolving at all times.
+  $(HOSTS[mode] || HOSTS.vsingle).appendChild(subCol)
   hideErr(appErr)
 }
-document.querySelectorAll('.tab').forEach((t) => {
+document.querySelectorAll('.sitem[data-mode]').forEach((t) => {
   t.addEventListener('click', () => setMode(t.getAttribute('data-mode')))
 })
-setMode('vsingle')
+document.querySelectorAll('.tcard[data-goto]').forEach((c) => {
+  c.addEventListener('click', () => setMode(c.getAttribute('data-goto')))
+})
+$('side-reports').addEventListener('click', () => $('recentBtn').click())
+$('side-tokens').addEventListener('click', () => openPricing())
+setMode('home')
 $('subText').addEventListener('input', updateWC)
 $('ctrlText').addEventListener('input', updateWC)
 updateWC()

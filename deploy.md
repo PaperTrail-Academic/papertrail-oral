@@ -63,8 +63,10 @@ Audio and export go through the two teacher edge functions, which verify ownersh
 3. Cloudflare: CNAME `app` → the Vercel-shown project-specific target, **DNS-only (grey cloud)**
    (same as `oral` — the proxy fights Vercel's cert otherwise).
 4. Supabase → Authentication → URL Configuration → Redirect URLs: add
-   `https://app.papertrailacademic.com` and `https://<project>.vercel.app/app`
-   (Google sign-in, sign-up confirmation, and password reset all redirect here).
+   `https://app.papertrailacademic.com/app` and `https://<project>.vercel.app/app`
+   — the `/app` path matters: entries are exact-match (wildcard `/*` also works), and a
+   redirectTo that isn't allowlisted silently falls back to the Site URL (Google sign-in,
+   sign-up confirmation, and password reset all redirect here).
 
 ## Required Supabase Auth config (one-time — needed for sign-in on the website)
 Supabase → Authentication → URL Configuration:
