@@ -136,6 +136,7 @@
         <li>You’ll answer <b id="rules-n">several</b> questions, <b>one at a time</b>.</li>
         <li>You won’t see a question until you press <b>Begin</b>. The question is <b>read aloud</b>, then you get <b id="rules-read">10</b> seconds to prepare, and <b>recording starts automatically</b>.</li>
         <li>Each answer can run up to <b>2 minutes</b>, then it stops on its own — no need to fill the time.</li>
+        <li>Once a question is revealed you have <b id="rules-window">about 5 minutes</b> to record and send your answer. Stay on the page until it says <b>saved</b>.</li>
         <li><b>One take per question</b> — there are no re-records. Just talk it through in your own words; this isn’t a memory test.</li>
         <li>Your essay is below for reference the whole time.</li>
       </ul>
@@ -177,16 +178,20 @@
    Anon key is a public client key (safe in the browser). Privileged work is
    server-side in the edge functions, gated by the session token in the URL.
 
-   NOTE (integrity): oral-get-session currently returns all question text in
-   one response, so a determined student could read them from the Network tab.
-   This page reveals them one-at-a-time as an honest-student deterrent; the
-   tamper-resistant version gates question delivery server-side (see STATE.md). */
+   INTEGRITY (server-side reveal, 2026-07-04): question text NEVER arrives in
+   bulk. oral-get-session returns only count/progress; pressing Begin calls
+   oral-reveal-question, which hands over ONE question and stamps the reveal
+   time server-side. From that stamp the student has ANSWER_WINDOW seconds
+   (server-enforced) to record and submit — a lapsed window forfeits the
+   question (submit is rejected, the report states the fact). The Network tab
+   now shows only the question currently being answered. */
 const SUPABASE_URL = "https://ktzrdhiqhidexunucuqp.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0enJkaGlxaGlkZXh1bnVjdXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTQ2ODMsImV4cCI6MjA4ODE5MDY4M30.24Gbyh0C-wbDqQ31MD-ttXoCfLwjcWvjs9-UXAaqmHU";
 const FN = SUPABASE_URL + "/functions/v1";
 
 const PREP_SECONDS = 10;      // prep window AFTER the question is read aloud, before recording starts
 const MAX_ANSWER_SECONDS = 120; // 2-min auto-stop cap — authorship answers stay concise; also bounds file size
+let ANSWER_WINDOW_SECONDS = 300; // server-enforced reveal→submit window; overwritten from the server response
 
 function readToken(){
   const q = new URLSearchParams(location.search).get("token");
@@ -220,12 +225,12 @@ function pickMime(){
 }
 function fmt(s){ const m=Math.floor(s/60), ss=String(s%60).padStart(2,"0"); return m+":"+ss; }
 
-/* state */
-let QUESTIONS=[];            // [{idx, question}] in order (text kept in JS, not DOM until reveal)
+/* state — no question text lives in the page until the server reveals it */
 let answered=new Set();
 let totalQ=0;
 let stream=null;             // persistent mic stream across questions
-let cursor=0;                // index into QUESTIONS of the current question
+let current=null;            // the server-revealed question: {idx, question, number, total, secondsLeft}
+let nextNumber=1;            // 1-based label for the idle screen (server-provided, then +1 per answer)
 
 function updateProgress(){
   els.progCount.textContent = answered.size+" of "+totalQ+" answered";
@@ -248,9 +253,9 @@ async function loadSession(){
     }
   }catch(e){ return blocked("📡","Connection problem","We couldn’t reach the server. Check your connection and reload."); }
 
-  totalQ = data.totalQuestions || (data.questions||[]).length;
+  totalQ = data.totalQuestions || 0;
   answered = new Set(data.answeredIdxs||[]);
-  QUESTIONS = (data.questions||[]).map((q,i)=>({ idx: typeof q.idx==="number"?q.idx:i, question: q.question||"" }));
+  if (typeof data.answerWindowSeconds === "number" && data.answerWindowSeconds > 0) ANSWER_WINDOW_SECONDS = data.answerWindowSeconds;
 
   if(!data.canRecord){
     const reason=data.closedReason;
@@ -264,6 +269,8 @@ async function loadSession(){
 
   els.rulesN.textContent = totalQ;
   els.rulesRead.textContent = PREP_SECONDS;
+  const rw = el("rules-window");
+  if (rw) rw.textContent = "about " + Math.round(ANSWER_WINDOW_SECONDS/60) + " minutes";
   if(data.essayTitle){ els.essayTitle.textContent=data.essayTitle; } else { hide(els.essayTitle); }
   // Full essay (essayText); essayExcerpt kept as a fallback for an older server response.
   els.essayExcerpt.textContent=(data.essayText||data.essayExcerpt||"").trim()||"(Your essay text isn’t shown here.)";
@@ -271,9 +278,19 @@ async function loadSession(){
   hide(els.loading); show(els.main);
   updateProgress();
 
-  // resume to first unanswered question
-  cursor = QUESTIONS.findIndex(q=>!answered.has(q.idx));
-  if(cursor===-1){ finish(); } else { renderIdle(); }
+  // resume: the server owns the walk (answered → skip; lapsed reveal →
+  // forfeited, skip). done=true means nothing is left to answer.
+  if(data.done){
+    // Let the server finalize (it closes a session whose last question was
+    // forfeited); fire-and-forget — the student is done either way.
+    fetch(FN+"/oral-reveal-question?token="+encodeURIComponent(TOKEN),{
+      method:"POST", headers:{"apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY},
+    }).catch(()=>{});
+    finish();
+  } else {
+    nextNumber = data.nextNumber || (answered.size+1);
+    renderIdle();
+  }
 }
 
 function finish(){
@@ -304,34 +321,66 @@ function prefetchTTS(idx){
 }
 
 function renderIdle(){
-  const n = cursor+1;
+  const n = nextNumber;
   els.stageBody.innerHTML = `
     <p class="qlabel">Question ${n} of ${totalQ}</p>
     <p class="hint">When you press Begin, the question appears and is <b>read aloud</b>. Then you’ll have
-      <b>${PREP_SECONDS} seconds</b> to prepare before recording starts. You get <b>one take</b>.</p>
+      <b>${PREP_SECONDS} seconds</b> to prepare before recording starts. You get <b>one take</b>, and
+      <b>about ${Math.round(ANSWER_WINDOW_SECONDS/60)} minutes</b> from reveal to finish sending your answer.</p>
     <button class="btn-begin" id="beginBtn">Begin question ${n}</button>
     <div class="status" id="stStatus"></div>`;
   el("beginBtn").onclick = onBegin;
-  prefetchTTS(QUESTIONS[cursor].idx); // warm the audio while they sit on Begin
+  // NB: no TTS prefetch here — the question hasn't been revealed yet, and the
+  // server refuses to speak an unrevealed question.
 }
 
 async function onBegin(){
   const btn=el("beginBtn"); btn.disabled=true;
   const st=el("stStatus");
-  // acquire mic once, reuse across questions
+  // acquire mic once, reuse across questions — BEFORE the reveal, so the
+  // answer window never burns while the student hunts for the mic prompt
   if(!stream){
     st.textContent="Allow microphone access to begin…";
     try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
     catch(e){ st.textContent="Microphone access was blocked. Allow it in your browser, then press Begin again."; st.className="status err"; btn.disabled=false; return; }
   }
+  st.textContent="Getting your question…"; st.className="status";
+  await revealNext(btn, st);
+}
+
+/* Ask the server for the next question. The server stamps the reveal time —
+   the answer window starts NOW. */
+async function revealNext(btn, st){
+  let r, data;
+  try{
+    r = await fetch(FN+"/oral-reveal-question?token="+encodeURIComponent(TOKEN),{
+      method:"POST", headers:{"Content-Type":"application/json","apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY},
+      body:JSON.stringify({sessionToken:TOKEN}),
+    });
+    data = await r.json().catch(()=>({}));
+  }catch(e){
+    if(st){ st.textContent="Connection problem — check your internet and press Begin again."; st.className="status err"; }
+    if(btn) btn.disabled=false;
+    return;
+  }
+  if(r.status===410) return blocked("🔒","This defense is closed","This link is no longer accepting responses.");
+  if(!r.ok){
+    if(st){ st.textContent=(data&&data.error)||"Couldn’t get the question — press Begin again."; st.className="status err"; }
+    if(btn) btn.disabled=false;
+    return;
+  }
+  if(data.done){ stopStream(); return finish(); }
+  current = data;                       // {idx, question, number, total, secondsLeft…}
+  if(typeof data.total==="number" && data.total>0) totalQ = data.total;
+  prefetchTTS(current.idx);             // start fetching the audio immediately
   renderListen();
 }
 
 /* Stage A: reveal the question text and read it aloud. When the audio ends
    (or is unavailable), move to the prep countdown. */
 async function renderListen(){
-  const q=QUESTIONS[cursor];
-  const n=cursor+1;
+  const q=current;
+  const n=current.number;
   els.stageBody.innerHTML=`
     <p class="qlabel">Question ${n} of ${totalQ}</p>
     <p class="qtext"></p>
@@ -361,8 +410,8 @@ async function renderListen(){
 
 /* Stage B: prep countdown, then recording starts automatically. */
 function renderPrep(){
-  const q=QUESTIONS[cursor];
-  const n=cursor+1;
+  const q=current;
+  const n=current.number;
   els.stageBody.innerHTML=`
     <p class="qlabel">Question ${n} of ${totalQ}</p>
     <p class="qtext"></p>
@@ -378,8 +427,8 @@ function renderPrep(){
 }
 
 function startRecording(){
-  const q=QUESTIONS[cursor];
-  const n=cursor+1;
+  const q=current;
+  const n=current.number;
   const mime=pickMime();
   let chunks=[], rec;
   try{ rec=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream); }
@@ -424,11 +473,10 @@ function startRecording(){
 }
 
 async function submitAnswer(idx, blob){
-  const n=cursor+1;
+  const n=(current&&current.number)||"?";
   els.stageBody.innerHTML=`<p class="qlabel">Question ${n} of ${totalQ}</p>
     <p class="hint"><span class="spinner"></span> Saving your answer…</p>
     <div class="status" id="stStatus"></div>`;
-  const st=()=>el("stStatus");
   try{
     const ct=blob.type||"audio/webm";
     const r=await fetch(FN+"/oral-submit-response?token="+encodeURIComponent(TOKEN)+"&idx="+idx,{
@@ -437,7 +485,35 @@ async function submitAnswer(idx, blob){
     const out=await r.json().catch(()=>({}));
     if(!r.ok){
       if(r.status===410){ return blocked("🔒","This defense closed","The session is no longer accepting recordings."); }
-      // technical failure → allow resEND of the SAME take (not a re-record)
+      if(r.status===409 && out.code==="answer_window_lapsed"){
+        // The server-enforced window closed before the answer arrived. Factual,
+        // and final for this question — move on rather than stranding the student.
+        els.stageBody.innerHTML=`<p class="qlabel">Question ${n} of ${totalQ}</p>
+          <p class="status err">The time window for this answer passed before it was sent, so it wasn’t recorded. You’ll move on to the next question.</p>
+          <button class="btn-begin" id="contBtn">Continue</button>`;
+        el("contBtn").onclick=async ()=>{
+          el("contBtn").disabled=true;
+          // Peek at what's left WITHOUT revealing (a reveal here would start
+          // the next question's clock on a screen the student isn't ready for).
+          try{
+            const gs=await fetch(FN+"/oral-get-session",{
+              method:"POST", headers:{"Content-Type":"application/json","apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY},
+              body:JSON.stringify({sessionToken:TOKEN}),
+            });
+            const g=await gs.json().catch(()=>({}));
+            if(g && g.done){
+              fetch(FN+"/oral-reveal-question?token="+encodeURIComponent(TOKEN),{
+                method:"POST", headers:{"apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY},
+              }).catch(()=>{}); // let the server finalize the session
+              stopStream(); return finish();
+            }
+            nextNumber=(g&&g.nextNumber)||nextNumber+1;
+          }catch(e){ nextNumber=nextNumber+1; }
+          renderIdle();
+        };
+        return;
+      }
+      // technical failure → allow resend of the SAME take (not a re-record)
       els.stageBody.innerHTML=`<p class="qlabel">Question ${n} of ${totalQ}</p>
         <p class="status err">${out.error||"That didn’t save. Your recording is safe — try sending it again."}</p>
         <button class="btn-retry" id="retryBtn">Try sending again</button>`;
@@ -455,12 +531,20 @@ async function submitAnswer(idx, blob){
 }
 
 function advance(){
-  // brief confirmation, then next question (or finish)
+  // brief confirmation, then the next Begin screen (or finish). The next
+  // question is NOT revealed here — its clock must not start until Begin.
   els.stageBody.innerHTML=`<p class="status ok">✓ Answer recorded.</p>`;
-  const next=QUESTIONS.findIndex((q,i)=> i>cursor && !answered.has(q.idx));
+  const done = current && current.number>=totalQ;
   setTimeout(()=>{
-    if(next===-1 || answered.size>=totalQ){ stopStream(); finish(); }
-    else { cursor=next; renderIdle(); }
+    if(done || answered.size>=totalQ){
+      // Nothing left in the sequence (any earlier forfeits are behind us).
+      // Confirm with the server so a forfeit-containing session gets closed.
+      fetch(FN+"/oral-reveal-question?token="+encodeURIComponent(TOKEN),{
+        method:"POST", headers:{"apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY},
+      }).catch(()=>{});
+      stopStream(); finish();
+    }
+    else { nextNumber=(current?current.number:nextNumber)+1; renderIdle(); }
   }, 900);
 }
 function stopStream(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }

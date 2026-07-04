@@ -175,6 +175,13 @@ const content = document.getElementById('content')
 function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
 function fmtDate(iso){ if(!iso) return ''; try{ return new Date(iso).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) }catch{ return iso } }
 function fmtDur(sec){ if(sec==null) return ''; const m=Math.floor(sec/60), s=sec%60; return m+':'+String(s).padStart(2,'0') }
+// Timing facts (server-side reveal, 2026-07-04). Stated plainly, never interpreted.
+function fmtElapsed(sec){ if(sec==null) return ''; const m=Math.floor(sec/60), s=sec%60; return m>0 ? (m+'m '+s+'s') : (s+'s') }
+function fmtDateTime(iso){ if(!iso) return ''; try{ return new Date(iso).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) }catch{ return iso } }
+function timingLine(pq){
+  if (pq && pq.answeredSeconds != null) return 'Answer submitted ' + fmtElapsed(pq.answeredSeconds) + ' after the question was revealed.'
+  return ''
+}
 function slug(s){ return String(s||'report').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50) || 'report' }
 function exportWho(r){
   const name = (r.studentName||'').trim()
@@ -279,7 +286,11 @@ function renderReport({ report, session, responses }){
 
     let body = ''
     if (isNA) {
-      body = `<p class="noanswer">No answer was recorded for this question.</p>`
+      // Two distinct facts (2026-07-04): revealed-but-not-answered (evidence
+      // carries the window fact, plus the local-time reveal stamp) vs never
+      // reached. Older reports have neither field — the generic line stands.
+      body = `<p class="noanswer">${esc(pq.evidence || 'No answer was recorded for this question.')}</p>`
+      if (pq.revealedAt) body += `<p class="tnote">Question revealed ${esc(fmtDateTime(pq.revealedAt))}.</p>`
     } else {
       if (pq.evidence) body += `<p class="evidence">${esc(pq.evidence)}</p>`
       if (pq.askAbout) body += `<div class="askabout"><b>Worth asking:</b> ${esc(pq.askAbout)}</div>`
@@ -291,6 +302,8 @@ function renderReport({ report, session, responses }){
           + `<div class="ttext">${esc(resp.transcript)}</div></div>`
           + `<p class="tnote">Auto-transcribed${conf}${dur}</p>`
       }
+      const tl = timingLine(pq)
+      if (tl) body += `<p class="tnote">${esc(tl)}</p>`
       // audio
       const audioGone = downloaded || (resp && resp.audio_deleted_at) || !resp
       if (audioGone) {
@@ -425,11 +438,15 @@ function buildExportHtml(r){
     const m = MARKERS[pq.marker] || MARKERS.thin
     const na = pq.marker === 'not_answered'
     const parts = []
-    if (na) parts.push('<p style="color:#8a93a3;font-style:italic">No answer was recorded for this question.</p>')
-    else {
+    if (na) {
+      parts.push('<p style="color:#8a93a3;font-style:italic">' + esc(pq.evidence || 'No answer was recorded for this question.') + '</p>')
+      if (pq.revealedAt) parts.push('<p style="color:#5b6472;font-size:13px">Question revealed ' + esc(fmtDateTime(pq.revealedAt)) + '.</p>')
+    } else {
       if (pq.evidence) parts.push('<p>' + esc(pq.evidence) + '</p>')
       if (pq.askAbout) parts.push('<p style="color:#1f5a4f"><b>Worth asking:</b> ' + esc(pq.askAbout) + '</p>')
       if (q.transcript) parts.push('<div style="border-left:3px solid #e5e8ee;padding-left:12px;color:#3a4657"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#5b6472"><b>Student’s spoken answer</b></div><div style="white-space:pre-wrap">' + esc(q.transcript) + '</div></div>')
+      const tl = timingLine(pq)
+      if (tl) parts.push('<p style="color:#5b6472;font-size:13px">' + esc(tl) + '</p>')
     }
     return '<div class="q" style="border:1px solid #e5e8ee;border-radius:10px;padding:14px 16px;margin:0 0 12px">'
       + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">'
