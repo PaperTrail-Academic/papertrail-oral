@@ -139,6 +139,7 @@
         <li>Once a question is revealed you have <b id="rules-window">about 5 minutes</b> to record and send your answer. Stay on the page until it says <b>saved</b>.</li>
         <li><b>One take per question</b> — there are no re-records. Just talk it through in your own words; this isn’t a memory test.</li>
         <li>Your essay is below for reference the whole time.</li>
+        <li>While a question is open, this page <b>notes basic activity facts</b> for your teacher — like how soon you start speaking, whether the tab is switched away from, and use of copy. Stay on this page and just speak your answer.</li>
       </ul>
     </div></div>
 
@@ -231,6 +232,26 @@ let totalQ=0;
 let stream=null;             // persistent mic stream across questions
 let current=null;            // the server-revealed question: {idx, question, number, total, secondsLeft}
 let nextNumber=1;            // 1-based label for the idle screen (server-provided, then +1 per answer)
+
+/* ── Activity facts (2026-07-04) ─────────────────────────────────────────
+   Tracked from the moment a question is revealed until its answer is sent,
+   and reported to the teacher alongside the recording (the rules on this
+   page tell the student so): copy events, and time the tab spends hidden.
+   These are page-level facts — stated in the report as facts, nothing more. */
+const SIG={active:false,copies:0,hidden:0,hiddenMs:0,hiddenSince:null};
+function sigStart(){ SIG.active=true; SIG.copies=0; SIG.hidden=0; SIG.hiddenMs=0;
+  SIG.hiddenSince=document.hidden?Date.now():null; }
+function sigStop(){ if(SIG.hiddenSince){ SIG.hiddenMs+=Date.now()-SIG.hiddenSince; SIG.hiddenSince=null; } SIG.active=false; }
+function sigParams(){ // finalize any open hidden episode without stopping tracking
+  const extra=SIG.hiddenSince?Date.now()-SIG.hiddenSince:0;
+  return "&copies="+SIG.copies+"&hidden="+SIG.hidden+"&hiddenSec="+Math.round((SIG.hiddenMs+extra)/1000);
+}
+document.addEventListener("copy",()=>{ if(SIG.active) SIG.copies++; });
+document.addEventListener("visibilitychange",()=>{
+  if(!SIG.active) return;
+  if(document.hidden){ SIG.hidden++; SIG.hiddenSince=Date.now(); }
+  else if(SIG.hiddenSince){ SIG.hiddenMs+=Date.now()-SIG.hiddenSince; SIG.hiddenSince=null; }
+});
 
 function updateProgress(){
   els.progCount.textContent = answered.size+" of "+totalQ+" answered";
@@ -372,6 +393,7 @@ async function revealNext(btn, st){
   if(data.done){ stopStream(); return finish(); }
   current = data;                       // {idx, question, number, total, secondsLeft…}
   if(typeof data.total==="number" && data.total>0) totalQ = data.total;
+  sigStart();                           // activity facts track from reveal → submit
   prefetchTTS(current.idx);             // start fetching the audio immediately
   renderListen();
 }
@@ -479,7 +501,7 @@ async function submitAnswer(idx, blob){
     <div class="status" id="stStatus"></div>`;
   try{
     const ct=blob.type||"audio/webm";
-    const r=await fetch(FN+"/oral-submit-response?token="+encodeURIComponent(TOKEN)+"&idx="+idx,{
+    const r=await fetch(FN+"/oral-submit-response?token="+encodeURIComponent(TOKEN)+"&idx="+idx+sigParams(),{
       method:"POST", headers:{"Content-Type":ct,"apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY}, body:blob,
     });
     const out=await r.json().catch(()=>({}));
@@ -521,6 +543,7 @@ async function submitAnswer(idx, blob){
       return;
     }
     answered.add(idx); updateProgress();
+    sigStop();
     advance();
   }catch(e){
     els.stageBody.innerHTML=`<p class="qlabel">Question ${n} of ${totalQ}</p>
