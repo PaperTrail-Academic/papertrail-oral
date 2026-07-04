@@ -175,12 +175,24 @@ const content = document.getElementById('content')
 function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
 function fmtDate(iso){ if(!iso) return ''; try{ return new Date(iso).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) }catch{ return iso } }
 function fmtDur(sec){ if(sec==null) return ''; const m=Math.floor(sec/60), s=sec%60; return m+':'+String(s).padStart(2,'0') }
-// Timing facts (server-side reveal, 2026-07-04). Stated plainly, never interpreted.
-function fmtElapsed(sec){ if(sec==null) return ''; const m=Math.floor(sec/60), s=sec%60; return m>0 ? (m+'m '+s+'s') : (s+'s') }
+// Timing + activity facts (server-side reveal + integrity signals, 2026-07-04).
+// Stated plainly, never interpreted. Client-reported facts (tab, copy) are
+// defeatable — presence is a fact, absence proves nothing (disclaimer says so).
+function fmtElapsed(sec){ if(sec==null) return ''; const m=Math.floor(sec/60), s=Math.round(sec%60); return m>0 ? (m+'m '+s+'s') : (s+'s') }
 function fmtDateTime(iso){ if(!iso) return ''; try{ return new Date(iso).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) }catch{ return iso } }
-function timingLine(pq){
-  if (pq && pq.answeredSeconds != null) return 'Answer submitted ' + fmtElapsed(pq.answeredSeconds) + ' after the question was revealed.'
-  return ''
+function factLines(pq){
+  if (!pq) return []
+  const lines = []
+  if (pq.answeredSeconds != null) lines.push('Answer submitted ' + fmtElapsed(pq.answeredSeconds) + ' after the question was revealed.')
+  if (pq.firstSpeechSeconds != null) lines.push('First speech began ' + (pq.firstSpeechSeconds < 1 ? 'under a second' : fmtElapsed(pq.firstSpeechSeconds)) + ' into the recording.')
+  const cs = pq.clientSignals
+  if (cs && typeof cs === 'object') {
+    const bits = []
+    if (cs.copyCount > 0) bits.push('copy used ' + cs.copyCount + '×')
+    if (cs.hiddenCount > 0) bits.push('tab hidden ' + cs.hiddenCount + '×' + (cs.hiddenSeconds > 0 ? ' (' + fmtElapsed(cs.hiddenSeconds) + ' total)' : ''))
+    if (bits.length) lines.push('While this question was open: ' + bits.join(', ') + ' (page-reported).')
+  }
+  return lines
 }
 function slug(s){ return String(s||'report').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50) || 'report' }
 function exportWho(r){
@@ -302,8 +314,8 @@ function renderReport({ report, session, responses }){
           + `<div class="ttext">${esc(resp.transcript)}</div></div>`
           + `<p class="tnote">Auto-transcribed${conf}${dur}</p>`
       }
-      const tl = timingLine(pq)
-      if (tl) body += `<p class="tnote">${esc(tl)}</p>`
+      const fl = factLines(pq)
+      if (fl.length) body += `<p class="tnote">${fl.map(esc).join('<br>')}</p>`
       // audio
       const audioGone = downloaded || (resp && resp.audio_deleted_at) || !resp
       if (audioGone) {
@@ -445,8 +457,8 @@ function buildExportHtml(r){
       if (pq.evidence) parts.push('<p>' + esc(pq.evidence) + '</p>')
       if (pq.askAbout) parts.push('<p style="color:#1f5a4f"><b>Worth asking:</b> ' + esc(pq.askAbout) + '</p>')
       if (q.transcript) parts.push('<div style="border-left:3px solid #e5e8ee;padding-left:12px;color:#3a4657"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#5b6472"><b>Student’s spoken answer</b></div><div style="white-space:pre-wrap">' + esc(q.transcript) + '</div></div>')
-      const tl = timingLine(pq)
-      if (tl) parts.push('<p style="color:#5b6472;font-size:13px">' + esc(tl) + '</p>')
+      const fl = factLines(pq)
+      if (fl.length) parts.push('<p style="color:#5b6472;font-size:13px">' + fl.map(esc).join('<br>') + '</p>')
     }
     return '<div class="q" style="border:1px solid #e5e8ee;border-radius:10px;padding:14px 16px;margin:0 0 12px">'
       + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">'
