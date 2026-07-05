@@ -375,6 +375,12 @@
       <div class="cols">
         <div class="col">
           <div class="colhdr"><span class="t">Controlled sample <span style="font-weight:400;color:var(--muted)">— their known writing</span></span><span class="wc bad" id="wc-ctrl">0 words</span></div>
+          <div id="fileRowCtrl" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px;">
+            <input type="file" id="fileInputCtrl" accept=".pdf,.docx,.txt,.md" style="display:none;" />
+            <button type="button" class="btn" id="fileBtnCtrl" title="Load a file into the Controlled sample box">📄 File → Controlled sample</button>
+            <button type="button" class="btn" id="pickerBtnCtrl" title="Load from Google Drive into the Controlled sample box">▾ Drive → Controlled sample</button>
+            <span class="paste-note" id="fileMsgCtrl" style="margin:0;"></span>
+          </div>
           <textarea class="sample" id="ctrlText" placeholder="Paste writing you know is the student's own — an in-class essay, an earlier assignment, a supervised piece. Minimum 500 words."></textarea>
         </div>
         <div class="col" id="host-vcompare-sub"></div>
@@ -725,13 +731,13 @@ document.querySelectorAll('.pack').forEach((p) => {
 const subCol = document.createElement('div')
 subCol.className = 'col'
 subCol.innerHTML = '<div class="colhdr"><span class="t">Submitted work <span style="font-weight:400;color:var(--muted)">— exactly what will be sent</span></span><span class="wc bad" id="wc-sub">0 words</span></div>' +
-  // File-upload row (reusable across tools). Currently shown for Verify Citations;
-  // to enable on other tools, drop the mode gate in setMode(). The Google Picker
-  // button is a stub until the console-side Drive/Picker config is wired.
-  '<div id="fileRow" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px;">' +
+  // File-upload row (reusable across tools). Shown on every tool. The Drive
+  // button calls window.__ptDrivePicker (wired later with the console-side
+  // Picker/OAuth config); until that exists it shows a friendly message.
+  '<div id="fileRow" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px;">' +
     '<input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" style="display:none;" />' +
     '<button type="button" class="btn" id="fileBtn">📄 Choose file…</button>' +
-    '<button type="button" class="btn" id="pickerBtn" disabled title="Google Drive picker — coming soon">▾ Google Drive (soon)</button>' +
+    '<button type="button" class="btn" id="pickerBtn" title="Load from Google Drive">▾ Google Drive</button>' +
     '<span class="paste-note" id="fileMsg" style="margin:0;"></span>' +
   '</div>' +
   '<textarea class="sample" id="subText" placeholder="Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words."></textarea>' +
@@ -763,14 +769,19 @@ function setMode(mode) {
   // (hidden) vsingle pane so it is never detached — getElementById('subText')
   // and the word-count badge must keep resolving at all times.
   $(HOSTS[mode] || HOSTS.vsingle).appendChild(subCol)
-  // File upload is currently offered on Verify Citations only. Verify Citations
-  // wants citations KEPT (opposite of Verify Single) — swap the box guidance too.
-  var fileRow = $('fileRow')
-  if (fileRow) fileRow.style.display = mode === 'vcitations' ? 'flex' : 'none'
+  // File upload is offered on every tool. Verify Citations wants citations KEPT
+  // (opposite of Verify Single) — swap the box guidance for that mode.
   var sub = $('subText')
   if (sub) sub.placeholder = mode === 'vcitations'
     ? 'Paste the full essay including its citations and works-cited list — or use “Choose file” to load a PDF or Word doc. Minimum 300 words.'
     : 'Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words.'
+  // On Verify Compare there are TWO file/Drive buttons (this one for the
+  // Submitted box, plus the Controlled-sample column's own). Name this one's
+  // destination so the teacher can't confuse them; keep it plain elsewhere.
+  var isCompare = mode === 'vcompare'
+  var fb = $('fileBtn'), pb = $('pickerBtn')
+  if (fb) fb.textContent = isCompare ? '📄 File → Submitted work' : '📄 Choose file…'
+  if (pb) pb.textContent = isCompare ? '▾ Drive → Submitted work' : '▾ Google Drive'
   hideErr(appErr)
 }
 document.querySelectorAll('.sitem[data-mode]').forEach((t) => {
@@ -786,35 +797,66 @@ $('subText').addEventListener('input', updateWC)
 $('ctrlText').addEventListener('input', updateWC)
 updateWC()
 
-// ── File upload → extract text into the submitted-work box ────────────────────
-;(function wireFileUpload() {
-  const fileBtn = $('fileBtn'), fileInput = $('fileInput'), fileMsg = $('fileMsg')
-  if (!fileBtn || !fileInput) return
-  fileBtn.addEventListener('click', () => fileInput.click())
-  fileInput.addEventListener('change', async () => {
-    const file = fileInput.files && fileInput.files[0]
-    if (!file) return
-    fileMsg.textContent = 'Reading “' + file.name + '”…'
-    fileMsg.style.color = 'var(--muted)'
-    let res
-    try { res = await window.__ptFileExtract.extractText(file) }
-    catch (e) { res = { text: '', error: 'Could not read that file.' } }
-    if (res.error) {
-      fileMsg.textContent = res.error
-      fileMsg.style.color = 'var(--warn)'
-    } else {
-      $('subText').value = res.text
-      updateWC()
-      if (res.warning) { fileMsg.textContent = res.warning; fileMsg.style.color = 'var(--warn)' }
-      else {
-        const n = wordCountOf('subText')
-        fileMsg.textContent = 'Loaded “' + file.name + '” — ' + n + ' words. Review below before running.'
-        fileMsg.style.color = 'var(--teal-dark)'
+// ── File upload / Google Drive → extract text into a target box ───────────────
+// Reusable for every tool: the shared submitted-work box (subText) and Verify
+// Compare's controlled-sample box (ctrlText). Populates `targetId` and refreshes
+// word counts. The Drive button calls window.__ptDrivePicker.pick() if present
+// (wired later with the console Picker/OAuth config); otherwise it explains that
+// Drive isn't connected yet.
+function applyExtractResult(res, targetId, msgEl, fileLabel) {
+  if (!res || res.error) {
+    msgEl.textContent = (res && res.error) || 'Could not read that file.'
+    msgEl.style.color = 'var(--warn)'
+    return
+  }
+  $(targetId).value = res.text
+  updateWC()
+  if (res.warning) { msgEl.textContent = res.warning; msgEl.style.color = 'var(--warn)' }
+  else {
+    const n = wordCountOf(targetId)
+    msgEl.textContent = 'Loaded ' + (fileLabel ? '“' + fileLabel + '” — ' : '') + n + ' words. Review before running.'
+    msgEl.style.color = 'var(--teal-dark)'
+  }
+}
+function wireFileUpload(cfg) {
+  const fileBtn = $(cfg.fileBtn), fileInput = $(cfg.fileInput), msgEl = $(cfg.msg), pickerBtn = $(cfg.pickerBtn)
+  if (fileBtn && fileInput) {
+    fileBtn.addEventListener('click', () => fileInput.click())
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files && fileInput.files[0]
+      if (!file) return
+      msgEl.textContent = 'Reading “' + file.name + '”…'; msgEl.style.color = 'var(--muted)'
+      let res
+      try { res = await window.__ptFileExtract.extractText(file) }
+      catch { res = { text: '', error: 'Could not read that file.' } }
+      applyExtractResult(res, cfg.target, msgEl, file.name)
+      fileInput.value = '' // allow re-selecting the same file
+    })
+  }
+  if (pickerBtn) {
+    pickerBtn.addEventListener('click', async () => {
+      const picker = window.__ptDrivePicker
+      if (!picker || typeof picker.pick !== 'function') {
+        msgEl.textContent = 'Google Drive isn’t connected yet — use “Choose file” or paste for now.'
+        msgEl.style.color = 'var(--muted)'
+        return
       }
-    }
-    fileInput.value = '' // allow re-selecting the same file
-  })
-})()
+      msgEl.textContent = 'Opening Google Drive…'; msgEl.style.color = 'var(--muted)'
+      try {
+        // Contract for the picker code: resolve to { text, name } or { error }.
+        const res = await picker.pick()
+        if (res && res.text != null) applyExtractResult({ text: res.text }, cfg.target, msgEl, res.name)
+        else if (res && res.error) { msgEl.textContent = res.error; msgEl.style.color = 'var(--warn)' }
+        else { msgEl.textContent = ''; }
+      } catch (e) {
+        msgEl.textContent = 'Could not load from Google Drive (' + ((e && e.message) || 'error') + ').'
+        msgEl.style.color = 'var(--warn)'
+      }
+    })
+  }
+}
+wireFileUpload({ fileBtn: 'fileBtn',     fileInput: 'fileInput',     msg: 'fileMsg',     pickerBtn: 'pickerBtn',     target: 'subText' })
+wireFileUpload({ fileBtn: 'fileBtnCtrl', fileInput: 'fileInputCtrl', msg: 'fileMsgCtrl', pickerBtn: 'pickerBtnCtrl', target: 'ctrlText' })
 
 function getMeta() {
   return {
