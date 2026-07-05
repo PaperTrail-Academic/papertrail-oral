@@ -281,6 +281,7 @@
         <div class="sgroup">Tools</div>
         <button class="sitem" data-mode="vsingle">🔬 Verify Single</button>
         <button class="sitem" data-mode="vcompare">⚖️ Verify Compare</button>
+        <button class="sitem" data-mode="vcitations">📚 Verify Citations</button>
         <button class="sitem" data-mode="oral">🎙️ Oral Defense</button>
         <div class="sgroup">Your work</div>
         <button class="sitem" id="side-reports">🕘 Reports</button>
@@ -314,6 +315,15 @@
             eleven stylistic dimensions, side-by-side passages of interest, and suggested
             discussion questions.</p>
           <div class="tmeta"><span class="costchip">1 token</span><span class="go">Open →</span></div>
+        </button>
+        <button class="tcard" data-goto="vcitations">
+          <div class="ticon">📚</div>
+          <div class="tname">Verify Citations</div>
+          <div class="ttag">"Do the sources say what the essay claims they say?"</div>
+          <p>Every citation checked against reachable sources — does the source exist, and does what
+            the essay says it says match what it actually says? Quotes checked verbatim where reachable.
+            Facts and questions, never a verdict.</p>
+          <div class="tmeta"><span class="costchip">from 2 tokens</span><span class="go">Open →</span></div>
         </button>
         <button class="tcard" data-goto="oral">
           <div class="ticon">🎙️</div>
@@ -372,6 +382,20 @@
       <div class="runbar">
         <button class="btn primary" id="run-vcompare">⚖️ Run Verify Compare — 1 Token</button>
         <span class="status" id="status-vcompare"></span>
+      </div>
+    </div>
+
+    <!-- VERIFY CITATIONS -->
+    <div class="pane" id="pane-vcitations">
+      <div class="intro"><b>Authorship Citation Report.</b> Send the essay <b>with its bibliography</b> —
+        each source is checked for existence, and what the essay says a source says is compared against
+        what the source actually says, with quotes checked verbatim where reachable. Facts and questions,
+        never a verdict. <b>Keep the citations and works-cited list in — they are the point here.</b>
+        <b>From 2 PaperTrail Tokens</b> (+1 per additional 25 citations).</div>
+      <div id="host-vcitations-sub"></div>
+      <div class="runbar">
+        <button class="btn primary" id="run-vcitations">📚 Run Verify Citations</button>
+        <span class="status" id="status-vcitations"></span>
       </div>
     </div>
 
@@ -523,6 +547,16 @@
 
 <script src="/lib/stylematch.js"></script>
 <script src="/lib/reports.js"></script>
+<!-- Client-side file extraction: mammoth (.docx), pdf.js (text-based .pdf) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
+<script src="/lib/file-extract.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -691,6 +725,15 @@ document.querySelectorAll('.pack').forEach((p) => {
 const subCol = document.createElement('div')
 subCol.className = 'col'
 subCol.innerHTML = '<div class="colhdr"><span class="t">Submitted work <span style="font-weight:400;color:var(--muted)">— exactly what will be sent</span></span><span class="wc bad" id="wc-sub">0 words</span></div>' +
+  // File-upload row (reusable across tools). Currently shown for Verify Citations;
+  // to enable on other tools, drop the mode gate in setMode(). The Google Picker
+  // button is a stub until the console-side Drive/Picker config is wired.
+  '<div id="fileRow" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px;">' +
+    '<input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" style="display:none;" />' +
+    '<button type="button" class="btn" id="fileBtn">📄 Choose file…</button>' +
+    '<button type="button" class="btn" id="pickerBtn" disabled title="Google Drive picker — coming soon">▾ Google Drive (soon)</button>' +
+    '<span class="paste-note" id="fileMsg" style="margin:0;"></span>' +
+  '</div>' +
   '<textarea class="sample" id="subText" placeholder="Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words."></textarea>' +
   '<div class="paste-note">Tip: remove identifying information you don\'t need in the analysis.</div>'
 
@@ -711,7 +754,7 @@ function updateWC() {
 }
 
 // ── Sidebar navigation ───────────────────────────────────────────────────────
-const HOSTS = { vsingle: 'host-vsingle-sub', vcompare: 'host-vcompare-sub', oral: 'host-oral-sub' }
+const HOSTS = { vsingle: 'host-vsingle-sub', vcompare: 'host-vcompare-sub', vcitations: 'host-vcitations-sub', oral: 'host-oral-sub' }
 function setMode(mode) {
   document.querySelectorAll('.sitem[data-mode]').forEach((t) => t.classList.toggle('active', t.getAttribute('data-mode') === mode))
   document.querySelectorAll('.pane').forEach((p) => p.classList.toggle('active', p.id === 'pane-' + mode))
@@ -720,6 +763,14 @@ function setMode(mode) {
   // (hidden) vsingle pane so it is never detached — getElementById('subText')
   // and the word-count badge must keep resolving at all times.
   $(HOSTS[mode] || HOSTS.vsingle).appendChild(subCol)
+  // File upload is currently offered on Verify Citations only. Verify Citations
+  // wants citations KEPT (opposite of Verify Single) — swap the box guidance too.
+  var fileRow = $('fileRow')
+  if (fileRow) fileRow.style.display = mode === 'vcitations' ? 'flex' : 'none'
+  var sub = $('subText')
+  if (sub) sub.placeholder = mode === 'vcitations'
+    ? 'Paste the full essay including its citations and works-cited list — or use “Choose file” to load a PDF or Word doc. Minimum 300 words.'
+    : 'Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words.'
   hideErr(appErr)
 }
 document.querySelectorAll('.sitem[data-mode]').forEach((t) => {
@@ -734,6 +785,36 @@ setMode('home')
 $('subText').addEventListener('input', updateWC)
 $('ctrlText').addEventListener('input', updateWC)
 updateWC()
+
+// ── File upload → extract text into the submitted-work box ────────────────────
+;(function wireFileUpload() {
+  const fileBtn = $('fileBtn'), fileInput = $('fileInput'), fileMsg = $('fileMsg')
+  if (!fileBtn || !fileInput) return
+  fileBtn.addEventListener('click', () => fileInput.click())
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files && fileInput.files[0]
+    if (!file) return
+    fileMsg.textContent = 'Reading “' + file.name + '”…'
+    fileMsg.style.color = 'var(--muted)'
+    let res
+    try { res = await window.__ptFileExtract.extractText(file) }
+    catch (e) { res = { text: '', error: 'Could not read that file.' } }
+    if (res.error) {
+      fileMsg.textContent = res.error
+      fileMsg.style.color = 'var(--warn)'
+    } else {
+      $('subText').value = res.text
+      updateWC()
+      if (res.warning) { fileMsg.textContent = res.warning; fileMsg.style.color = 'var(--warn)' }
+      else {
+        const n = wordCountOf('subText')
+        fileMsg.textContent = 'Loaded “' + file.name + '” — ' + n + ' words. Review below before running.'
+        fileMsg.style.color = 'var(--teal-dark)'
+      }
+    }
+    fileInput.value = '' // allow re-selecting the same file
+  })
+})()
 
 function getMeta() {
   return {
@@ -825,9 +906,13 @@ $('recentBtn').addEventListener('click', async () => {
 $('recentClose').addEventListener('click', () => $('recentModal').classList.remove('open'))
 
 // ── Verify: loading + error popup screens (ported from the extension) ────────
-function verifyLoadingHTML(comparative) {
-  const heading = comparative ? 'Comparing writing samples…' : 'Analyzing writing sample…'
-  const bodyCopy = comparative
+function verifyLoadingHTML(mode) {
+  const isCit = mode === 'citations'
+  const comparative = mode === true || mode === 'comparative'
+  const heading = isCit ? 'Checking citations…' : comparative ? 'Comparing writing samples…' : 'Analyzing writing sample…'
+  const bodyCopy = isCit
+    ? 'is identifying every citation, then checking each source against what the essay says it says and verifying quotes where reachable. This usually takes two to four minutes. The full report opens here automatically when it is ready — keep this window open.'
+    : comparative
     ? 'is comparing your two samples across eleven stylometric dimensions and producing a baseline deviation analysis. This typically takes one to two minutes.'
     : 'is reading your document chunk by chunk and producing a stylometric measurement for each section. Short documents complete in about a minute; longer documents (3,000+ words) can take three to five minutes.'
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PaperTrail Verify — Analyzing…</title>' +
@@ -1041,6 +1126,161 @@ async function runVerify(comparative) {
 
 $('run-vsingle').addEventListener('click', () => runVerify(false))
 $('run-vcompare').addEventListener('click', () => runVerify(true))
+
+// ── Verify Citations flow (parse → over-cap chooser → run → poll → render) ─────
+const CITATIONS_EDGE_URL = SUPABASE_URL + '/functions/v1/verify-citations'
+const buildCitationsReportHTML = window.__wpaReports.smBuildCitationsReportHTML
+const CIT_MIN_WORDS = 300
+const CITATION_CAP_UI = 25
+
+async function runCitations() {
+  if (verifyRunning) return
+  const tB = $('subText').value.trim()
+  if (!tB || smWords(tB).length < CIT_MIN_WORDS) {
+    showErr(appErr, 'Verify Citations needs at least ' + CIT_MIN_WORDS + ' words of essay (with its citations).')
+    return
+  }
+  const token = await getToken()
+  if (!token) { showErr(appErr, 'Please sign in again to run Verify Citations.'); await render(); return }
+  const bal = await fetchBalance()
+  if (typeof bal === 'number' && bal < 2) { openPricing(); return }
+
+  verifyRunning = true
+  const meta = getMeta()
+  const runBtn = $('run-vcitations')
+  runBtn.disabled = true
+  function done() { verifyRunning = false; runBtn.disabled = false }
+
+  const pw = window.open('', 'pt-vcitations-report', 'width=960,height=780,resizable=yes,scrollbars=yes')
+  if (!pw) { alert('Popup was blocked. Please allow popups for this site.'); done(); return }
+  pw.document.write(verifyLoadingHTML('citations'))
+  pw.document.close()
+
+  function renderError(title, message) {
+    if (pw && !pw.closed) { pw.document.open(); pw.document.write(verifyErrorHTML(title, message)); pw.document.close() }
+    done()
+  }
+  function renderReport(reportData) {
+    if (!pw || pw.closed) { done(); return }
+    if (!reportData.reportId) reportData.reportId = 'PT-' + Date.now()
+    const html = buildCitationsReportHTML(reportData, meta, '')
+    pw.document.open(); pw.document.write(html); pw.document.close()
+    cacheReport({
+      reportId: reportData.reportId, type: 'Verify Citations',
+      studentName: meta.studentName || '', assignment: meta.assignment || '',
+      generated: new Date().toLocaleString(), html: html,
+    })
+    refreshTokens()
+    try {
+      const printBtn = pw.document.getElementById('verify-print-btn')
+      if (printBtn) printBtn.addEventListener('click', () => pw.print())
+    } catch { /* popup closed */ }
+    done()
+  }
+
+  // Poll the reports row until Phase B lands, then render the whole report at once.
+  function pollRow(reportId) {
+    const INTERVAL = 2500, MAX = 200
+    let attempts = 0, finished = false, timer = null
+    function stop() { if (timer) clearInterval(timer) }
+    async function tick() {
+      if (!pw || pw.closed) { stop(); done(); return }
+      attempts++
+      let rows
+      try {
+        const activeToken = await getToken()
+        const r = await fetch(SUPABASE_URL + '/rest/v1/reports?id=eq.' + encodeURIComponent(reportId) + '&select=status,report_json', {
+          headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + activeToken },
+        })
+        rows = await r.json()
+      } catch { if (attempts >= MAX) { stop(); renderError('Network Error', 'Lost connection while waiting for the report.') } return }
+      const row = rows && rows[0]
+      if (!row) return
+      if (row.status === 'complete' && row.report_json) {
+        if (finished) return; finished = true; stop()
+        const rd = row.report_json
+        if (!rd.reportId) rd.reportId = reportId
+        renderReport(rd)
+        try {
+          const activeToken = await getToken()
+          fetch(SUPABASE_URL + '/rest/v1/reports?id=eq.' + encodeURIComponent(reportId), {
+            method: 'PATCH',
+            headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + activeToken, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+            body: JSON.stringify({ report_json: null }),
+          }).catch(() => {})
+        } catch { /* ignore */ }
+      } else if (row.status === 'failed') {
+        if (finished) return; finished = true; stop()
+        renderError('Analysis Error', 'The citation check could not complete. Your PaperTrail Tokens were not charged.')
+      } else if (attempts >= MAX) {
+        if (finished) return; finished = true; stop()
+        renderError('Taking Too Long', 'The citation check is taking unusually long. If a report appears under 🕘 Reports shortly, you can view it there; otherwise please try again.')
+      }
+    }
+    tick(); timer = setInterval(tick, INTERVAL)
+  }
+
+  async function post(bodyObj) {
+    const activeToken = await getToken()
+    const r = await fetch(CITATIONS_EDGE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + activeToken },
+      body: JSON.stringify(Object.assign({ access_token: activeToken }, bodyObj)),
+    })
+    const data = await r.json().catch(() => ({}))
+    return { status: r.status, data }
+  }
+
+  async function confirmRun(reportId, cap) {
+    if (pw && !pw.closed) { pw.document.open(); pw.document.write(verifyLoadingHTML('citations')); pw.document.close() }
+    const { status, data } = await post({ action: 'run', reportId, cap, essay: tB, metadata: meta })
+    if (!pw || pw.closed) { done(); return }
+    if (status === 402) { renderError('Not Enough Tokens', (data && data.message) || 'You do not have enough PaperTrail Tokens for this check.'); return }
+    if (data && data.error) { renderError('Analysis Error', data.error); return }
+    if (status === 202 && data && data.reportId) { pollRow(data.reportId); return }
+    renderError('Unexpected Response', 'The Verify service returned an unexpected response. Your tokens were not charged. Please try again.')
+  }
+
+  function showChooser(reportId, count, costCapped, costAll) {
+    if (!pw || pw.closed) { done(); return }
+    const doc = pw.document
+    doc.open()
+    doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Verify Citations</title>' +
+      '<style>body{font-family:"DM Sans",Arial,sans-serif;background:#f0f4f9;margin:0;padding:40px;color:#3c4043;}' +
+      '.card{max-width:520px;margin:40px auto;background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.1);text-align:center;}' +
+      'h2{color:#2a7a6b;font-size:20px;margin:0 0 8px;}p{font-size:14px;line-height:1.6;color:#5f6368;}' +
+      'button{font-family:inherit;font-size:14px;font-weight:700;padding:12px 20px;margin:8px;border:none;border-radius:8px;cursor:pointer;}' +
+      '.primary{background:#2a7a6b;color:#fff;}.secondary{background:#eef1f5;color:#2a7a6b;}</style></head><body>' +
+      '<div class="card"><h2>' + count + ' citations found</h2>' +
+      '<p>Checking every citation costs more tokens. You can check the first ' + CITATION_CAP_UI + ' or all ' + count + '.</p>' +
+      '<div><button id="cCapped" class="secondary">Check first ' + CITATION_CAP_UI + ' — ' + costCapped + ' tokens</button>' +
+      '<button id="cAll" class="primary">Check all ' + count + ' — ' + costAll + ' tokens</button></div>' +
+      '<p style="font-size:12px;margin-top:16px;">You are not charged until you choose.</p></div></body></html>')
+    doc.close()
+    try {
+      doc.getElementById('cCapped').addEventListener('click', () => confirmRun(reportId, 'capped'))
+      doc.getElementById('cAll').addEventListener('click', () => confirmRun(reportId, 'all'))
+    } catch { /* popup closed */ }
+  }
+
+  // STEP 1 — parse (no charge)
+  const { status, data } = await post({ action: 'parse', essay: tB, metadata: meta })
+  if (!pw || pw.closed) { done(); return }
+  if (status === 401) { renderError('Session Expired', 'Your session has expired. Sign in again and retry.'); return }
+  if (data && data.ok === false) {
+    if (data.reason === 'insufficient_credits') { renderError('Not Enough Tokens', data.message); openPricing(); return }
+    renderError('Nothing to Check', data.message || 'This document could not be checked. No tokens were used.')
+    return
+  }
+  if (data && data.error) { renderError('Analysis Error', data.error); return }
+  if (data && data.ok && data.reportId) {
+    if (data.overCap) showChooser(data.reportId, data.citationCount, data.costIfCapped, data.costIfAll)
+    else confirmRun(data.reportId, 'all')
+    return
+  }
+  renderError('Unexpected Response', 'The Verify service returned an unexpected response. No tokens were used. Please try again.')
+}
+$('run-vcitations').addEventListener('click', () => runCitations())
 
 // ── Oral Defense (ported from oral.js: pool-aware Back, cap 10, 1+1 tokens) ──
 async function oralFetch(path, payload) {
