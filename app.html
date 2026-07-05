@@ -563,6 +563,9 @@
   }
 </script>
 <script src="/lib/file-extract.js"></script>
+<!-- Google Drive Picker (gapi + adapter). Needs Picker API key + app id set below. -->
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="/lib/drive-picker.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -584,6 +587,16 @@ const MAX_QUESTIONS = 10
 const MAX_Q_CHARS = 500
 const RECENT_KEY = 'pt_app_recent_reports'
 
+// ── Google Drive Picker config ───────────────────────────────────────────────
+// Fill these from the Google Cloud console for the VERIFY project once the
+// Picker API + drive.file scope are set up. Until both are non-empty, the Drive
+// button falls back to a friendly "not set up yet" message.
+//   GOOGLE_PICKER_API_KEY — an API key with the Google Picker API enabled,
+//     restricted to this app's origin.
+//   GOOGLE_APP_ID — the Google Cloud project NUMBER (used as setAppId).
+const GOOGLE_PICKER_API_KEY = 'AIzaSyBYA60U5ZSDislobnxLuW99GZNKiq-_XVQ'  // PaperTrail Academic — Picker API key (referrer-restricted)
+const GOOGLE_APP_ID = '1034692183563'      // PaperTrail Academic project number
+
 const smWords = window.__wpaStyleMatch.smWords
 const smComputeScores = window.__wpaStyleMatch.smComputeScores
 const buildVerifyReportHTML = window.__wpaReports.smBuildVerifyReportHTML
@@ -591,6 +604,16 @@ const buildVerifyReportHTML = window.__wpaReports.smBuildVerifyReportHTML
 const supabase = createClient(SUPABASE_URL, ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
 })
+
+// Configure the Drive picker (no-op until the API key/app id are filled above).
+if (window.__ptDrivePicker) {
+  window.__ptDrivePicker.configure({
+    supabase,
+    extractText: window.__ptFileExtract.extractText,
+    developerKey: GOOGLE_PICKER_API_KEY,
+    appId: GOOGLE_APP_ID,
+  })
+}
 
 const $ = (id) => document.getElementById(id)
 const appErr = $('appErr')
@@ -843,9 +866,9 @@ function wireFileUpload(cfg) {
       }
       msgEl.textContent = 'Opening Google Drive…'; msgEl.style.color = 'var(--muted)'
       try {
-        // Contract for the picker code: resolve to { text, name } or { error }.
+        // Picker resolves to { text, name, warning } | { error } | null (cancelled).
         const res = await picker.pick()
-        if (res && res.text != null) applyExtractResult({ text: res.text }, cfg.target, msgEl, res.name)
+        if (res && res.text != null) applyExtractResult(res, cfg.target, msgEl, res.name)
         else if (res && res.error) { msgEl.textContent = res.error; msgEl.style.color = 'var(--warn)' }
         else { msgEl.textContent = ''; }
       } catch (e) {
