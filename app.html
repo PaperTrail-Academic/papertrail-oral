@@ -21,7 +21,7 @@
   body{font-family:"DM Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
     color:var(--ink); background:var(--bg); line-height:1.55; -webkit-font-smoothing:antialiased;}
   a{color:var(--teal)}
-  .wrap{max-width:960px; margin:0 auto; padding:22px 18px 80px;}
+  .wrap{max-width:1200px; margin:0 auto; padding:22px 18px 80px;}
   header.site{display:flex; align-items:center; gap:10px; padding:6px 0 14px; justify-content:space-between; flex-wrap:wrap;}
   header.site .brand{display:flex; align-items:center; gap:10px;}
   header.site img{width:30px; height:30px; border-radius:6px;}
@@ -94,7 +94,7 @@
   }
 
   /* home cards */
-  .cards{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin:4px 0 18px;}
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:4px 0 18px;}
   @media (max-width:860px){ .cards{grid-template-columns:1fr;} }
   .tcard{display:flex; flex-direction:column; font:inherit; text-align:left; background:#fff;
     border:1px solid var(--line); border-radius:14px; padding:18px; cursor:pointer;
@@ -120,16 +120,23 @@
   .cols{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
   @media (max-width:720px){ .cols{grid-template-columns:1fr;} }
   .col{display:flex; flex-direction:column;}
-  .colhdr{display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 0 6px;}
-  .colhdr .t{font-weight:700; font-size:.86rem;}
+  .colhdr{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin:0 0 6px;}
+  .colhdr .t{font-weight:700; font-size:.86rem; flex:1; min-width:0;}
+  /* compact upload pills — live in the column header, next to the box they fill */
+  .upbtn{font:inherit; font-size:.76rem; font-weight:600; color:var(--muted); background:#fff;
+    border:1px solid var(--line); border-radius:999px; padding:4px 11px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;}
+  .upbtn:hover{border-color:var(--teal); color:var(--teal-dark); background:#f2f8f6;}
   .wc{font-size:.76rem; font-weight:700; padding:2px 9px; border-radius:999px; white-space:nowrap;}
   .wc.ok{background:#e6f4ea; color:#137333;}
   .wc.bad{background:#fbecea; color:var(--warn);}
-  textarea.sample{width:100%; min-height:260px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  .wc.zero{background:#eef1f5; color:var(--muted);}
+  textarea.sample{width:100%; min-height:320px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     font-size:.82rem; line-height:1.6; padding:12px; border:1px solid var(--line); border-radius:10px;
     background:#fff; resize:vertical; color:var(--ink);}
   textarea.sample:focus{outline:2px solid #cfe0db; border-color:var(--teal);}
   .paste-note{font-size:.78rem; color:var(--muted); margin:6px 0 0; line-height:1.5;}
+  .paste-note:empty{display:none;}
   .runbar{display:flex; align-items:center; gap:12px; margin:16px 0 0; flex-wrap:wrap;}
   .runbar .status{font-size:.82rem; color:var(--muted);}
   .errline{display:none; font-size:.86rem; color:var(--warn); background:#fbecea; border:1px solid #f0cfc8;
@@ -374,13 +381,14 @@
         questions. Stylometric scores are computed in your browser and sent as anchors. <b>Costs 1 PaperTrail Token.</b></div>
       <div class="cols">
         <div class="col">
-          <div class="colhdr"><span class="t">Controlled sample <span style="font-weight:400;color:var(--muted)">— their known writing</span></span><span class="wc bad" id="wc-ctrl">0 words</span></div>
-          <div id="fileRowCtrl" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px;">
-            <input type="file" id="fileInputCtrl" accept=".pdf,.docx,.txt,.md" style="display:none;" />
-            <button type="button" class="btn" id="fileBtnCtrl" title="Load a file into the Controlled sample box">📄 File → Controlled sample</button>
-            <button type="button" class="btn" id="pickerBtnCtrl" title="Load from Google Drive into the Controlled sample box">▾ Drive → Controlled sample</button>
-            <span class="paste-note" id="fileMsgCtrl" style="margin:0;"></span>
+          <div class="colhdr">
+            <span class="t">Controlled sample <span style="font-weight:400;color:var(--muted)">— their known writing</span></span>
+            <button type="button" class="upbtn" id="fileBtnCtrl" title="Load a .docx, PDF, or text file into this box">📄 File</button>
+            <button type="button" class="upbtn" id="pickerBtnCtrl" title="Load from Google Drive into this box">📁 Drive</button>
+            <span class="wc zero" id="wc-ctrl">0 words</span>
           </div>
+          <input type="file" id="fileInputCtrl" accept=".pdf,.docx,.txt,.md" style="display:none;" />
+          <span class="paste-note" id="fileMsgCtrl" style="margin:0 0 6px;display:block;"></span>
           <textarea class="sample" id="ctrlText" placeholder="Paste writing you know is the student's own — an in-class essay, an earlier assignment, a supervised piece. Minimum 500 words."></textarea>
         </div>
         <div class="col" id="host-vcompare-sub"></div>
@@ -753,16 +761,18 @@ document.querySelectorAll('.pack').forEach((p) => {
 // ── Shared Submitted Work column (reparents between panes, like the extension) ─
 const subCol = document.createElement('div')
 subCol.className = 'col'
-subCol.innerHTML = '<div class="colhdr"><span class="t">Submitted work <span style="font-weight:400;color:var(--muted)">— exactly what will be sent</span></span><span class="wc bad" id="wc-sub">0 words</span></div>' +
-  // File-upload row (reusable across tools). Shown on every tool. The Drive
-  // button calls window.__ptDrivePicker (wired later with the console-side
-  // Picker/OAuth config); until that exists it shows a friendly message.
-  '<div id="fileRow" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px;">' +
-    '<input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" style="display:none;" />' +
-    '<button type="button" class="btn" id="fileBtn">📄 Choose file…</button>' +
-    '<button type="button" class="btn" id="pickerBtn" title="Load from Google Drive">▾ Google Drive</button>' +
-    '<span class="paste-note" id="fileMsg" style="margin:0;"></span>' +
+// Upload controls are compact pills in the column header (v2 design pass,
+// 2026-07-06) — anchored to the box they fill, so no "File → destination"
+// labels are needed even when two columns are on screen. The Drive button
+// calls window.__ptDrivePicker; until that exists it shows a friendly message.
+subCol.innerHTML = '<div class="colhdr">' +
+    '<span class="t">Submitted work <span style="font-weight:400;color:var(--muted)">— exactly what will be sent</span></span>' +
+    '<button type="button" class="upbtn" id="fileBtn" title="Load a .docx, PDF, or text file into this box">📄 File</button>' +
+    '<button type="button" class="upbtn" id="pickerBtn" title="Load from Google Drive into this box">📁 Drive</button>' +
+    '<span class="wc zero" id="wc-sub">0 words</span>' +
   '</div>' +
+  '<input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" style="display:none;" />' +
+  '<span class="paste-note" id="fileMsg" style="margin:0 0 6px;display:block;"></span>' +
   '<textarea class="sample" id="subText" placeholder="Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words."></textarea>' +
   '<div class="paste-note">Tip: remove identifying information you don\'t need in the analysis.</div>'
 
@@ -771,14 +781,15 @@ function wordCountOf(id) {
   return t ? smWords(t).length : 0
 }
 function updateWC() {
+  // Empty box = neutral gray (nothing has gone wrong yet); short = warn; enough = green.
   const n = wordCountOf('subText')
   const wc = $('wc-sub')
   wc.textContent = n + ' words'
-  wc.className = 'wc ' + (n >= MIN_WORDS ? 'ok' : 'bad')
+  wc.className = 'wc ' + (n === 0 ? 'zero' : n >= MIN_WORDS ? 'ok' : 'bad')
   const nc = wordCountOf('ctrlText')
   const wcc = $('wc-ctrl')
   wcc.textContent = nc + ' words'
-  wcc.className = 'wc ' + (nc >= MIN_WORDS ? 'ok' : 'bad')
+  wcc.className = 'wc ' + (nc === 0 ? 'zero' : nc >= MIN_WORDS ? 'ok' : 'bad')
   updateOralGenState()
 }
 
@@ -796,15 +807,10 @@ function setMode(mode) {
   // (opposite of Verify Single) — swap the box guidance for that mode.
   var sub = $('subText')
   if (sub) sub.placeholder = mode === 'vcitations'
-    ? 'Paste the full essay including its citations and works-cited list — or use “Choose file” to load a PDF or Word doc. Minimum 300 words.'
+    ? 'Paste the full essay including its citations and works-cited list — or load a PDF or Word doc with the 📄 File button above. Minimum 300 words.'
     : 'Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words.'
-  // On Verify Compare there are TWO file/Drive buttons (this one for the
-  // Submitted box, plus the Controlled-sample column's own). Name this one's
-  // destination so the teacher can't confuse them; keep it plain elsewhere.
-  var isCompare = mode === 'vcompare'
-  var fb = $('fileBtn'), pb = $('pickerBtn')
-  if (fb) fb.textContent = isCompare ? '📄 File → Submitted work' : '📄 Choose file…'
-  if (pb) pb.textContent = isCompare ? '▾ Drive → Submitted work' : '▾ Google Drive'
+  // v2 design pass: the upload pills sit in each column's own header, so the
+  // destination is self-evident — no per-mode relabeling needed anymore.
   hideErr(appErr)
 }
 document.querySelectorAll('.sitem[data-mode]').forEach((t) => {
@@ -860,7 +866,7 @@ function wireFileUpload(cfg) {
     pickerBtn.addEventListener('click', async () => {
       const picker = window.__ptDrivePicker
       if (!picker || typeof picker.pick !== 'function') {
-        msgEl.textContent = 'Google Drive isn’t connected yet — use “Choose file” or paste for now.'
+        msgEl.textContent = 'Google Drive isn’t connected yet — use the 📄 File button or paste for now.'
         msgEl.style.color = 'var(--muted)'
         return
       }
