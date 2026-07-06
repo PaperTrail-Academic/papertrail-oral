@@ -117,6 +117,14 @@
   .intro{font-size:.88rem; color:#33404f; background:#eef5f2; border:1px solid #d3e6df; border-radius:10px;
     padding:11px 14px; margin:0 0 14px; line-height:1.6;}
   .intro b{color:var(--teal-dark);}
+  /* Verify Single report-type toggle (🔬 Consistency / 🧪 Data & Methods) — mirrors pt-panel v3.7 */
+  .vsegs{display:flex; gap:0; margin:0 0 10px; border:1px solid #d5dbe3; border-radius:8px;
+    overflow:hidden; width:fit-content;}
+  .vseg{font-family:inherit; font-size:.82rem; font-weight:700; padding:6px 14px; border:none;
+    background:#f1f3f4; color:var(--muted); cursor:pointer; transition:background .15s;}
+  .vseg + .vseg{border-left:1px solid #d5dbe3;}
+  .vseg.active{background:var(--teal); color:#fff;}
+  .vseg:hover:not(.active){background:#e4e7eb;}
   .cols{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
   @media (max-width:720px){ .cols{grid-template-columns:1fr;} }
   .col{display:flex; flex-direction:column;}
@@ -309,9 +317,9 @@
           <div class="ticon">🔬</div>
           <div class="tname">Verify Single</div>
           <div class="ttag">"Something about this essay doesn't add up."</div>
-          <p>One essay on its own. Read in ~150-word chunks and measured on six dimensions —
-            register, vocabulary, sentence complexity, argument depth, error density, cohesion —
-            with a heatmap of where the writing shifts.</p>
+          <p>One document on its own, two report types: <b>Consistency</b> — six dimensions per
+            ~150-word chunk with a heatmap of where the writing shifts — or <b>🧪 Data &amp; Methods</b> —
+            every reported statistic recomputed in code, for lab reports and IAs.</p>
           <div class="tmeta"><span class="costchip">1 token</span><span class="go">Open →</span></div>
         </button>
         <button class="tcard" data-goto="vcompare">
@@ -360,9 +368,14 @@
       </div>
     </details>
 
-    <!-- VERIFY SINGLE -->
+    <!-- VERIFY SINGLE — hosts two report types behind a segmented toggle
+         (mirrors extension pt-panel v3.7): 🔬 Consistency · 🧪 Data & Methods -->
     <div class="pane active" id="pane-vsingle">
-      <div class="intro"><b>Consistency Report.</b> The submitted work is read in ~150-word chunks and
+      <div class="vsegs">
+        <button type="button" class="vseg active" id="vseg-c" title="How consistent is the essay with itself?">🔬 Consistency</button>
+        <button type="button" class="vseg" id="vseg-d" title="Do the reported statistics recompute? For lab reports and IAs.">🧪 Data &amp; Methods</button>
+      </div>
+      <div class="intro" id="vs-intro"><b>Consistency Report.</b> The submitted work is read in ~150-word chunks and
         measured on six dimensions per chunk — register, vocabulary, sentence complexity, argument depth,
         error density, cohesion — with a heatmap of where the writing shifts. Text is sent for analysis and
         not retained afterward. <b>Costs 1 PaperTrail Token.</b></div>
@@ -794,6 +807,10 @@ function updateWC() {
 }
 
 // ── Sidebar navigation ───────────────────────────────────────────────────────
+// vsReportType is declared HERE (var, before the load-time setMode('home')
+// call) — declaring it `let` next to its toggle wiring put the setMode
+// placeholder branch in the temporal dead zone at load. Wired further down.
+var vsReportType = 'consistency'
 const HOSTS = { vsingle: 'host-vsingle-sub', vcompare: 'host-vcompare-sub', vcitations: 'host-vcitations-sub', oral: 'host-oral-sub' }
 function setMode(mode) {
   document.querySelectorAll('.sitem[data-mode]').forEach((t) => t.classList.toggle('active', t.getAttribute('data-mode') === mode))
@@ -808,6 +825,8 @@ function setMode(mode) {
   var sub = $('subText')
   if (sub) sub.placeholder = mode === 'vcitations'
     ? 'Paste the full essay including its citations and works-cited list — or load a PDF or Word doc with the 📄 File button above. Minimum 300 words.'
+    : (mode === 'vsingle' && typeof vsReportType !== 'undefined' && vsReportType === 'data')
+    ? 'Paste the full report including the data tables, statistics, and method description — they are what gets recomputed. Or load a PDF or Word doc with the 📄 File button above. Minimum 300 words.'
     : 'Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words.'
   // v2 design pass: the upload pills sit in each column's own header, so the
   // destination is self-evident — no per-mode relabeling needed anymore.
@@ -979,10 +998,13 @@ $('recentClose').addEventListener('click', () => $('recentModal').classList.remo
 // ── Verify: loading + error popup screens (ported from the extension) ────────
 function verifyLoadingHTML(mode) {
   const isCit = mode === 'citations'
+  const isData = mode === 'data'
   const comparative = mode === true || mode === 'comparative'
-  const heading = isCit ? 'Checking citations…' : comparative ? 'Comparing writing samples…' : 'Analyzing writing sample…'
+  const heading = isCit ? 'Checking citations…' : isData ? 'Recomputing the statistics…' : comparative ? 'Comparing writing samples…' : 'Analyzing writing sample…'
   const bodyCopy = isCit
     ? 'is identifying every citation, then checking each source against what the essay says it says and verifying quotes where reachable. This usually takes two to four minutes. The full report opens here automatically when it is ready — keep this window open.'
+    : isData
+    ? 'is extracting every reported statistic, then recomputing each one in code from the numbers printed in the document — t-tests, p-values, means, correlations, percentage changes — plus protocol arithmetic and table references. This usually takes one to two minutes. The report opens here automatically when it is ready — keep this window open.'
     : comparative
     ? 'is comparing your two samples across eleven stylometric dimensions and producing a baseline deviation analysis. This typically takes one to two minutes.'
     : 'is reading your document chunk by chunk and producing a stylometric measurement for each section. Short documents complete in about a minute; longer documents (3,000+ words) can take three to five minutes.'
@@ -1195,8 +1217,164 @@ async function runVerify(comparative) {
   renderError('Unexpected Response', 'The Verify service returned an unexpected response. Your PaperTrail Token was not charged. Please try again.')
 }
 
-$('run-vsingle').addEventListener('click', () => runVerify(false))
+$('run-vsingle').addEventListener('click', () => (vsReportType === 'data' ? runDataIntegrity() : runVerify(false)))
 $('run-vcompare').addEventListener('click', () => runVerify(true))
+
+// ── Verify Single report-type toggle (🔬 Consistency / 🧪 Data & Methods) ─────
+// Mirrors extension pt-panel v3.7. The Submitted box, metadata, and 1-token
+// cost are shared; the intro, run button, and box guidance swap.
+// NB: vsReportType itself is declared up by setMode (load-order constraint).
+const VS_INTROS = {
+  consistency:
+    '<b>Consistency Report.</b> The submitted work is read in ~150-word chunks and ' +
+    'measured on six dimensions per chunk — register, vocabulary, sentence complexity, argument depth, ' +
+    'error density, cohesion — with a heatmap of where the writing shifts. Text is sent for analysis and ' +
+    'not retained afterward. <b>Costs 1 PaperTrail Token.</b>',
+  data:
+    '<b>Data &amp; Methods Integrity Report.</b> For lab reports, IAs, and data-based essays. Every ' +
+    'reported statistic — t-tests, p-values, means, SDs, correlations, percentage changes — is ' +
+    '<b>recomputed in code</b> from the numbers printed in the document, never estimated. Also checks ' +
+    'protocol time-and-materials arithmetic, “see Table N” references, and internal contradictions. ' +
+    'An inconsistency is a question, not a finding. Text is sent for analysis and not retained ' +
+    'afterward. <b>Costs 1 PaperTrail Token.</b>',
+}
+function applyVsReportType() {
+  const isData = vsReportType === 'data'
+  $('vseg-c').classList.toggle('active', !isData)
+  $('vseg-d').classList.toggle('active', isData)
+  $('vs-intro').innerHTML = VS_INTROS[isData ? 'data' : 'consistency']
+  $('run-vsingle').textContent = isData ? '🧪 Run Data & Methods — 1 Token' : '🔬 Run Verify Single — 1 Token'
+  const sub = $('subText')
+  if (sub && document.querySelector('.pane.active') && document.querySelector('.pane.active').id === 'pane-vsingle') {
+    sub.placeholder = isData
+      ? 'Paste the full report including the data tables, statistics, and method description — they are what gets recomputed. Or load a PDF or Word doc with the 📄 File button above. Minimum 300 words.'
+      : 'Paste the student\'s submitted work here. Trim citations, headings, and boilerplate — what you see is exactly what is analyzed. Minimum 500 words.'
+  }
+}
+$('vseg-c').addEventListener('click', () => { vsReportType = 'consistency'; applyVsReportType() })
+$('vseg-d').addEventListener('click', () => { vsReportType = 'data'; applyVsReportType() })
+
+// ── Data & Methods flow — single POST → 202 → poll → single-shot render ──────
+// The edge fn recomputes statistics SERVER-SIDE in code and deducts 1 token
+// only AFTER a successful run, so every failure path is honestly "not charged".
+const VDATA_EDGE_URL = SUPABASE_URL + '/functions/v1/verify-data-integrity'
+const VDATA_MIN_WORDS = 300
+
+async function runDataIntegrity() {
+  if (verifyRunning) return
+  hideErr(appErr)
+  const tB = $('subText').value.trim()
+  if (!tB || smWords(tB).length < VDATA_MIN_WORDS) {
+    showErr(appErr, 'Verify Data & Methods needs at least ' + VDATA_MIN_WORDS + ' words (with the data tables and statistics included).')
+    return
+  }
+  const token = await getToken()
+  if (!token) { showErr(appErr, 'Please sign in again to run Verify Data & Methods.'); await render(); return }
+  const bal = await fetchBalance()
+  if (typeof bal === 'number' && bal < 1) { openPricing(); return }
+
+  verifyRunning = true
+  const meta = getMeta()
+  const runBtn = $('run-vsingle')
+  runBtn.disabled = true
+  function done() { verifyRunning = false; runBtn.disabled = false }
+
+  const pw = window.open('', 'pt-vdata-report', 'width=960,height=780,resizable=yes,scrollbars=yes')
+  if (!pw) { alert('Popup was blocked. Please allow popups for this site.'); done(); return }
+  pw.document.write(verifyLoadingHTML('data'))
+  pw.document.close()
+
+  function renderError(title, message) {
+    if (pw && !pw.closed) { pw.document.open(); pw.document.write(verifyErrorHTML(title, message)); pw.document.close() }
+    done()
+  }
+  function renderReport(reportData) {
+    if (!pw || pw.closed) { done(); return }
+    if (!reportData.reportId) reportData.reportId = 'PT-' + Date.now()
+    const html = window.__wpaReports.smBuildDataIntegrityReportHTML(reportData, meta, '')
+    pw.document.open(); pw.document.write(html); pw.document.close()
+    cacheReport({
+      reportId: reportData.reportId, type: 'Data & Methods',
+      studentName: meta.studentName || '', assignment: meta.assignment || '',
+      generated: new Date().toLocaleString(), html: html,
+    })
+    refreshTokens()
+    try {
+      const printBtn = pw.document.getElementById('verify-print-btn')
+      if (printBtn) printBtn.addEventListener('click', () => pw.print())
+    } catch { /* popup closed */ }
+    done()
+  }
+
+  function pollRow(reportId) {
+    const INTERVAL = 2500, MAX = 120   // 300s — extraction only, no web search
+    let attempts = 0, finished = false, timer = null
+    function stop() { if (timer) clearInterval(timer) }
+    async function tick() {
+      if (!pw || pw.closed) { stop(); done(); return }
+      attempts++
+      let rows
+      try {
+        const activeToken = await getToken()
+        const r = await fetch(SUPABASE_URL + '/rest/v1/reports?id=eq.' + encodeURIComponent(reportId) + '&select=status,report_json,error_message', {
+          headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + activeToken },
+        })
+        rows = await r.json()
+      } catch { if (attempts >= MAX) { stop(); renderError('Network Error', 'Lost connection while waiting for the report.') } return }
+      const row = rows && rows[0]
+      if (!row) return
+      if (row.status === 'complete' && row.report_json) {
+        if (finished) return; finished = true; stop()
+        const rd = row.report_json
+        if (!rd.reportId) rd.reportId = reportId
+        renderReport(rd)
+        try {
+          const activeToken = await getToken()
+          fetch(SUPABASE_URL + '/rest/v1/reports?id=eq.' + encodeURIComponent(reportId), {
+            method: 'PATCH',
+            headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + activeToken, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+            body: JSON.stringify({ report_json: null }),
+          }).catch(() => {})
+        } catch { /* ignore */ }
+      } else if (row.status === 'failed') {
+        if (finished) return; finished = true; stop()
+        if (row.error_message === 'no_quantitative_content') {
+          renderError('Nothing to Recompute',
+            'No reported statistics, protocol arithmetic, or table references were found in this document — there is nothing for this report type to check. No tokens were used. For prose essays, use the Consistency report instead.')
+        } else {
+          renderError('Analysis Error', 'The Data & Methods check could not complete. Your PaperTrail Tokens were not charged.')
+        }
+      } else if (attempts >= MAX) {
+        if (finished) return; finished = true; stop()
+        renderError('Taking Too Long', 'The check is taking unusually long. If a report appears under 🕘 Reports shortly, you can view it there; otherwise please try again.')
+      }
+    }
+    tick(); timer = setInterval(tick, INTERVAL)
+  }
+
+  let result
+  try {
+    const res = await fetch(VDATA_EDGE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ essay: tB, access_token: token, metadata: meta }),
+    })
+    result = { status: res.status, data: await res.json().catch(() => ({})) }
+  } catch {
+    renderError('Connection Error', 'Could not reach the Verify service — no tokens were used. Check your internet connection and try again.')
+    return
+  }
+  if (!pw || pw.closed) { done(); return }
+  const { status, data } = result
+  if (status === 401) { renderError('Session Expired', 'Your session has expired. Sign in again and retry.'); return }
+  if (status === 402 || (data && data.reason === 'insufficient_credits')) {
+    renderError('Not Enough Tokens', (data && data.message) || 'Verify Data & Methods needs 1 PaperTrail Token.'); openPricing(); return
+  }
+  if (data && data.ok === false) { renderError('Nothing to Check', data.message || 'This document could not be checked. No tokens were used.'); return }
+  if (data && data.error) { renderError('Analysis Error', data.error); return }
+  if (status === 202 && data && data.reportId) { pollRow(data.reportId); return }
+  renderError('Unexpected Response', 'The Verify service returned an unexpected response. No tokens were used. Please try again.')
+}
 
 // ── Verify Citations flow (parse → over-cap chooser → run → poll → render) ─────
 const CITATIONS_EDGE_URL = SUPABASE_URL + '/functions/v1/verify-citations'
