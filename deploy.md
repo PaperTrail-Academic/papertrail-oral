@@ -95,6 +95,12 @@ docs.google.com/apis.google.com/content.googleapis.com (the Picker renders in a 
 iframe), papertrailacademic.com + gstatic + drive-thirdparty.googleusercontent.com for images.
 (2026-07-06: the Google/cdnjs entries were MISSING and silently broke both the Drive picker
 and file upload on the deployed app — this allowlist expansion was the fix.)
+⚠ Referrer-Policy: the global `no-referrer` (protects session tokens / report ids in URLs)
+BREAKS referrer-restricted Google API keys — the Picker fails with "The API developer key is
+invalid" because Google never sees a referrer. Fix (2026-07-06): /app and /app.html override to
+`strict-origin-when-cross-origin` (sends the bare origin only cross-origin — no path, no
+tokens; /app's URL carries no secrets). session.html and report.html keep no-referrer — never
+relax those.
 `'unsafe-inline'` for scripts is required by the inline module scripts and the report popup's
 inline handlers — the CSP still blocks any injected EXTERNAL script/exfil origin, plus framing
 and plugin content. ⚠ If a page adds a new external resource (CDN, image host, API), it must be
