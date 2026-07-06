@@ -44,7 +44,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://papertrailacademic.com https://www.gstatic.com data: blob:; connect-src 'self' https://ktzrdhiqhidexunucuqp.supabase.co wss://ktzrdhiqhidexunucuqp.supabase.co https://esm.sh; media-src 'self' blob: https://ktzrdhiqhidexunucuqp.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh https://cdnjs.cloudflare.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://papertrailacademic.com https://www.gstatic.com https://ssl.gstatic.com https://drive-thirdparty.googleusercontent.com data: blob:; connect-src 'self' https://ktzrdhiqhidexunucuqp.supabase.co wss://ktzrdhiqhidexunucuqp.supabase.co https://esm.sh https://cdnjs.cloudflare.com https://www.googleapis.com https://content.googleapis.com; media-src 'self' blob: https://ktzrdhiqhidexunucuqp.supabase.co; worker-src 'self' blob:; frame-src https://docs.google.com https://apis.google.com https://content.googleapis.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
         }
       ]
     }

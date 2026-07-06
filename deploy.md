@@ -87,8 +87,14 @@ All routes ship HSTS, nosniff, X-Frame-Options DENY, Referrer-Policy no-referrer
 tokens and report ids live in URLs — never leak them via outbound links), a Permissions-Policy
 that allows ONLY the microphone (session.html recording) and denies camera/geolocation/payment,
 COOP same-origin-allow-popups, and a Content-Security-Policy. The CSP allowlist is exactly:
-self + esm.sh (supabase-js) for scripts, Google Fonts for styles/fonts, the Supabase project
-for connect/media (signed audio URLs, TTS blobs), papertrailacademic.com + gstatic for images.
+self + esm.sh (supabase-js) + cdnjs.cloudflare.com (mammoth, pdf.js) + apis.google.com (gapi,
+Drive Picker) for scripts, Google Fonts for styles/fonts, the Supabase project + cdnjs +
+www.googleapis.com/content.googleapis.com (Drive scope probe, file download/export) for
+connect, media from the Supabase project, worker-src self+blob (pdf.js), frame-src
+docs.google.com/apis.google.com/content.googleapis.com (the Picker renders in a Google
+iframe), papertrailacademic.com + gstatic + drive-thirdparty.googleusercontent.com for images.
+(2026-07-06: the Google/cdnjs entries were MISSING and silently broke both the Drive picker
+and file upload on the deployed app — this allowlist expansion was the fix.)
 `'unsafe-inline'` for scripts is required by the inline module scripts and the report popup's
 inline handlers — the CSP still blocks any injected EXTERNAL script/exfil origin, plus framing
 and plugin content. ⚠ If a page adds a new external resource (CDN, image host, API), it must be

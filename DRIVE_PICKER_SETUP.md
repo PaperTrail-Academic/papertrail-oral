@@ -20,8 +20,11 @@ GCP console → APIs & Services → **Library**, enable both:
 
 ## 2. Create an API key (the `developerKey`)
 APIs & Services → **Credentials** → Create credentials → **API key**.
-- **Application restrictions:** HTTP referrers → add the app's origin(s), e.g.
-  `https://oral.papertrailacademic.com/*` (and any other host that serves app.html).
+- **Application restrictions:** HTTP referrers → add the app's origin(s):
+  `https://app.papertrailacademic.com/*` (the host that serves app.html) — plus
+  `https://papertrail-oral.vercel.app/*` if you test on the vercel.app URL.
+  ⚠ app.html lives on **app.**papertrailacademic.com, not oral. — a key restricted
+  to the wrong host fails with "The API developer key is invalid".
 - **API restrictions:** restrict to **Google Picker API** (add Drive API too if you
   restrict by API).
 - Copy the key → this is `GOOGLE_PICKER_API_KEY` in app.html.
