@@ -401,8 +401,8 @@
           <div class="colhdr">
             <span class="t">Controlled sample <span style="font-weight:400;color:var(--muted)">— their known writing</span></span>
             <button type="button" class="upbtn" id="fileBtnCtrl" title="Load a .docx, PDF, or text file into this box">📄 File</button>
-            <button type="button" class="upbtn" id="pickerBtnCtrl" title="Load from Google Drive into this box">📁 Drive</button>
-            <button type="button" class="upbtn" id="odBtnCtrl" title="Load from OneDrive into this box">☁️ OneDrive</button>
+            <button type="button" class="upbtn" id="pickerBtnCtrl" title="Load from Google Drive into this box"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:13px;height:13px" /> Drive</button>
+            <button type="button" class="upbtn" id="odBtnCtrl" title="Load from OneDrive into this box"><svg width="13" height="13" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg> OneDrive</button>
             <span class="wc zero" id="wc-ctrl">0 words</span>
           </div>
           <input type="file" id="fileInputCtrl" accept=".pdf,.docx,.txt,.md" style="display:none;" />
@@ -811,8 +811,8 @@ subCol.className = 'col'
 subCol.innerHTML = '<div class="colhdr">' +
     '<span class="t">Submitted work <span style="font-weight:400;color:var(--muted)">— exactly what will be sent</span></span>' +
     '<button type="button" class="upbtn" id="fileBtn" title="Load a .docx, PDF, or text file into this box">📄 File</button>' +
-    '<button type="button" class="upbtn" id="pickerBtn" title="Load from Google Drive into this box">📁 Drive</button>' +
-    '<button type="button" class="upbtn" id="odBtn" title="Load from OneDrive into this box">☁️ OneDrive</button>' +
+    '<button type="button" class="upbtn" id="pickerBtn" title="Load from Google Drive into this box"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:13px;height:13px" /> Drive</button>' +
+    '<button type="button" class="upbtn" id="odBtn" title="Load from OneDrive into this box"><svg width="13" height="13" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg> OneDrive</button>' +
     '<span class="wc zero" id="wc-sub">0 words</span>' +
   '</div>' +
   '<input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" style="display:none;" />' +
