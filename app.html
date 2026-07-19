@@ -278,6 +278,10 @@
         <button class="link" id="forgot" type="button">Forgot password?</button>
       </div>
       <div class="or">or</div>
+      <button class="btn gbtn" id="microsoftBtn" type="button" style="margin-bottom:8px">
+        <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+        Sign in with Microsoft
+      </button>
       <button class="btn gbtn" id="googleBtn" type="button">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" />
         Continue with Google
@@ -300,7 +304,7 @@
         <button class="sitem" data-mode="oral">🎙️ Oral Defense</button>
         <div class="sgroup">Your work</div>
         <button class="sitem" id="side-reports">🕘 Reports</button>
-        <a class="sitem" href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener">📂 Oral dashboard ↗</a>
+        <a class="sitem" href="https://app.papertrailacademic.com/dashboard" target="_blank" rel="noopener">📂 Oral dashboard ↗</a>
         <button class="sitem" id="side-tokens">🪙 Buy tokens</button>
       </nav>
 
@@ -398,6 +402,7 @@
             <span class="t">Controlled sample <span style="font-weight:400;color:var(--muted)">— their known writing</span></span>
             <button type="button" class="upbtn" id="fileBtnCtrl" title="Load a .docx, PDF, or text file into this box">📄 File</button>
             <button type="button" class="upbtn" id="pickerBtnCtrl" title="Load from Google Drive into this box">📁 Drive</button>
+            <button type="button" class="upbtn" id="odBtnCtrl" title="Load from OneDrive into this box">☁️ OneDrive</button>
             <span class="wc zero" id="wc-ctrl">0 words</span>
           </div>
           <input type="file" id="fileInputCtrl" accept=".pdf,.docx,.txt,.md" style="display:none;" />
@@ -461,7 +466,7 @@
         <div class="errline" id="oral-err1"></div>
         <div class="runbar">
           <button class="btn primary" id="oral-generate" disabled>Generate questions — 1 Token</button>
-          <a class="link" href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener" style="font-size:.84rem;">Your sessions &amp; reports →</a>
+          <a class="link" href="https://app.papertrailacademic.com/dashboard" target="_blank" rel="noopener" style="font-size:.84rem;">Your sessions &amp; reports →</a>
         </div>
       </div>
 
@@ -519,7 +524,7 @@
         </div>
         <div class="runbar">
           <button class="btn" id="oral-another">Create another</button>
-          <a class="link" href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener" style="font-size:.84rem;">Your sessions &amp; reports →</a>
+          <a class="link" href="https://app.papertrailacademic.com/dashboard" target="_blank" rel="noopener" style="font-size:.84rem;">Your sessions &amp; reports →</a>
         </div>
       </div>
     </div>
@@ -530,7 +535,7 @@
     </div><!-- /.shell -->
 
     <div class="foot">Verify text is analyzed and not retained · Oral reports are kept 90 days on your
-      <a href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener">dashboard</a> ·
+      <a href="https://app.papertrailacademic.com/dashboard" target="_blank" rel="noopener">dashboard</a> ·
       Working in Google Docs? The <a href="https://papertrailacademic.com" target="_blank" rel="noopener">PaperTrail extension</a>
       adds revision history, StyleMatch, and one-click loading from Classroom.</div>
   </section>
@@ -567,7 +572,7 @@
     <div id="recentOral"><div class="none">Loading…</div></div>
     <div class="warnbox">⚠ Cached Verify reports are saved locally on this device only — clearing browser
       data removes them; use the report's Print / Save button for a permanent copy. Oral Defense reports are
-      kept on your <a href="https://oral.papertrailacademic.com/dashboard" target="_blank" rel="noopener">dashboard</a> for 90 days.</div>
+      kept on your <a href="https://app.papertrailacademic.com/dashboard" target="_blank" rel="noopener">dashboard</a> for 90 days.</div>
     <div class="modalfoot"><span></span><button class="btn" id="recentClose">Close</button></div>
   </div>
 </div>
@@ -587,14 +592,21 @@
 <!-- Google Drive Picker (gapi + adapter). Needs Picker API key + app id set below. -->
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="/lib/drive-picker.js"></script>
+<!-- OneDrive: custom Graph API picker, no SDK/API key needed — see /lib/onedrive-picker.js -->
+<script src="/lib/onedrive-picker.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPABASE_URL = 'https://ktzrdhiqhidexunucuqp.supabase.co'
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0enJkaGlxaGlkZXh1bnVjdXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTQ2ODMsImV4cCI6MjA4ODE5MDY4M30.24Gbyh0C-wbDqQ31MD-ttXoCfLwjcWvjs9-UXAaqmHU'
 const VERIFY_EDGE_URL = SUPABASE_URL + '/functions/v1/generate-report'
-const ORAL_DASH = 'https://oral.papertrailacademic.com/dashboard'
-const ORAL_REPORT_BASE = 'https://oral.papertrailacademic.com/report/'
+// Same-origin as this page (app.papertrailacademic.com) — not oral.papertrailacademic.com.
+// dashboard.html/report.html are served from the same Vercel project on either domain, but
+// only the app.* origin shares this page's Supabase session (localStorage is per-origin), so
+// linking there means teachers never hit a second sign-in wall. oral.papertrailacademic.com
+// redirects these two paths over to app.* for anyone who still lands there directly.
+const ORAL_DASH = 'https://app.papertrailacademic.com/dashboard'
+const ORAL_REPORT_BASE = 'https://app.papertrailacademic.com/report/'
 
 // Lemon Squeezy checkout — same live URLs the extension uses (auth.js)
 const CHECKOUT_URLS = {
@@ -633,6 +645,15 @@ if (window.__ptDrivePicker) {
     extractText: window.__ptFileExtract.extractText,
     developerKey: GOOGLE_PICKER_API_KEY,
     appId: GOOGLE_APP_ID,
+  })
+}
+
+// Configure the OneDrive picker (works as soon as Microsoft sign-in + Files.Read
+// are set up in Supabase/Entra ID — no separate API key required).
+if (window.__ptOneDrivePicker) {
+  window.__ptOneDrivePicker.configure({
+    supabase,
+    extractText: window.__ptFileExtract.extractText,
   })
 }
 
@@ -717,6 +738,15 @@ $('googleBtn').addEventListener('click', async () => {
   if (error) showMsg(error.message || 'Could not start Google sign-in.', 'err')
 })
 
+$('microsoftBtn').addEventListener('click', async () => {
+  clearMsg()
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'azure',
+    options: { redirectTo: location.origin + location.pathname, scopes: 'openid email profile' },
+  })
+  if (error) showMsg(error.message || 'Could not start Microsoft sign-in.', 'err')
+})
+
 $('forgot').addEventListener('click', async () => {
   clearMsg()
   const email = $('email').value.trim()
@@ -782,6 +812,7 @@ subCol.innerHTML = '<div class="colhdr">' +
     '<span class="t">Submitted work <span style="font-weight:400;color:var(--muted)">— exactly what will be sent</span></span>' +
     '<button type="button" class="upbtn" id="fileBtn" title="Load a .docx, PDF, or text file into this box">📄 File</button>' +
     '<button type="button" class="upbtn" id="pickerBtn" title="Load from Google Drive into this box">📁 Drive</button>' +
+    '<button type="button" class="upbtn" id="odBtn" title="Load from OneDrive into this box">☁️ OneDrive</button>' +
     '<span class="wc zero" id="wc-sub">0 words</span>' +
   '</div>' +
   '<input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" style="display:none;" />' +
@@ -868,6 +899,7 @@ function applyExtractResult(res, targetId, msgEl, fileLabel) {
 }
 function wireFileUpload(cfg) {
   const fileBtn = $(cfg.fileBtn), fileInput = $(cfg.fileInput), msgEl = $(cfg.msg), pickerBtn = $(cfg.pickerBtn)
+  const odBtn = $(cfg.odBtn)
   if (fileBtn && fileInput) {
     fileBtn.addEventListener('click', () => fileInput.click())
     fileInput.addEventListener('change', async () => {
@@ -902,9 +934,30 @@ function wireFileUpload(cfg) {
       }
     })
   }
+  if (odBtn) {
+    odBtn.addEventListener('click', async () => {
+      const picker = window.__ptOneDrivePicker
+      if (!picker || typeof picker.pick !== 'function') {
+        msgEl.textContent = 'OneDrive isn’t connected yet — use the 📄 File button or paste for now.'
+        msgEl.style.color = 'var(--muted)'
+        return
+      }
+      msgEl.textContent = 'Opening OneDrive…'; msgEl.style.color = 'var(--muted)'
+      try {
+        // Picker resolves to { text, name, warning } | { error } | null (cancelled).
+        const res = await picker.pick()
+        if (res && res.text != null) applyExtractResult(res, cfg.target, msgEl, res.name)
+        else if (res && res.error) { msgEl.textContent = res.error; msgEl.style.color = 'var(--warn)' }
+        else { msgEl.textContent = ''; }
+      } catch (e) {
+        msgEl.textContent = 'Could not load from OneDrive (' + ((e && e.message) || 'error') + ').'
+        msgEl.style.color = 'var(--warn)'
+      }
+    })
+  }
 }
-wireFileUpload({ fileBtn: 'fileBtn',     fileInput: 'fileInput',     msg: 'fileMsg',     pickerBtn: 'pickerBtn',     target: 'subText' })
-wireFileUpload({ fileBtn: 'fileBtnCtrl', fileInput: 'fileInputCtrl', msg: 'fileMsgCtrl', pickerBtn: 'pickerBtnCtrl', target: 'ctrlText' })
+wireFileUpload({ fileBtn: 'fileBtn',     fileInput: 'fileInput',     msg: 'fileMsg',     pickerBtn: 'pickerBtn',     odBtn: 'odBtn',     target: 'subText' })
+wireFileUpload({ fileBtn: 'fileBtnCtrl', fileInput: 'fileInputCtrl', msg: 'fileMsgCtrl', pickerBtn: 'pickerBtnCtrl', odBtn: 'odBtnCtrl', target: 'ctrlText' })
 
 function getMeta() {
   return {

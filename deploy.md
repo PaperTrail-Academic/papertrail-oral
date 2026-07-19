@@ -2,11 +2,25 @@
 
 Static site (no build step). This ONE repo/Vercel project serves TWO domains:
 
-- **`oral.papertrailacademic.com`** — student recording page + teacher report dashboard (Phase 1).
-- **`app.papertrailacademic.com`** — the teacher web app (Phase 2): Verify Single, Verify Compare,
-  and Oral Defense for teachers WITHOUT the Chrome extension. Paste-in text, same edge functions,
-  same shared PaperTrail Token wallet, Lemon Squeezy checkout links. (The repo name stays
-  `papertrail-oral` — renaming buys nothing user-facing; users only ever see the domains.)
+- **`oral.papertrailacademic.com`** — student recording page ONLY (`/session/:token`). Historically
+  (Phase 1) this domain also hosted the teacher dashboard and report pages, but as of 2026-07-19
+  those are canonically on `app.*` (see below) — `oral.*` just redirects `/dashboard` and
+  `/report/:id` there now. Nothing on this domain requires a teacher to be signed in.
+- **`app.papertrailacademic.com`** — the teacher-facing surface for everything: Verify Single,
+  Verify Compare, Verify Citations, and Oral Defense (send + full session/report history) for
+  teachers WITHOUT the Chrome extension. Paste-in text, same edge functions, same shared
+  PaperTrail Token wallet, Lemon Squeezy checkout links.
+
+Why the split moved: `dashboard.html`/`report.html` were originally built as part of the Oral
+Defense project (Phase 1, before `app.html` existed), so they shipped on `oral.*`. Once `app.html`
+became the primary teacher app, having the session dashboard on a different subdomain meant a
+second, redundant Supabase sign-in (session storage is per-origin — `oral.*` and `app.*` don't
+share it even though they're the same Supabase project and the same Vercel deployment). Both
+domains have always served the identical file set via un-conditioned rewrites, so no new pages had
+to be built — this was just a matter of pointing links at `app.*` instead of `oral.*`, plus two
+host-conditioned redirects so `oral.*` bounces there instead of serving its own copy. (The repo/
+Vercel project is still named `papertrail-oral` for historical reasons — that's cosmetic and worth
+renaming at some point, but it doesn't affect any of the above; users only ever see the domains.)
 
 ## Files
 - `session.html` — student recording page. Reads the token from `/session/{token}`, calls
@@ -21,7 +35,8 @@ Static site (no build step). This ONE repo/Vercel project serves TWO domains:
   sign-in so the "report ready" email link works even when the teacher isn't signed in yet.
   "Print / save PDF" has no side effects; "Export & finalize" calls `oral-download-report`, which
   saves a copy **and permanently deletes the student audio** (delete-on-download).
-- `index.html` — public front door for `oral.papertrailacademic.com/`; links to teacher sign-in.
+- `index.html` — public front door for `oral.papertrailacademic.com/`; links to teacher sign-in
+  (points at `app.papertrailacademic.com` now — see the domain-split note above).
 - `app.html` — **teacher web app** (`app.papertrailacademic.com`). Sign-in AND sign-up (non-extension
   teachers are the audience) + three tabs: 🔬 Verify Single, ⚖️ Verify Compare, 🎙️ Oral Defense.
   One shared "Submitted work" textarea reparents between tabs (same mechanic as the extension
@@ -37,7 +52,13 @@ Static site (no build step). This ONE repo/Vercel project serves TWO domains:
   (NOT a rewrite: Vercel checks the filesystem before rewrites, so `/` always wins as
   `index.html`; redirects run first). `/app` then rewrites to `/app.html` on any host — which is
   also the pre-DNS test URL on vercel.app. Other rewrites: `/session/:token` → `/session.html`,
-  `/report/:id` → `/report.html`, `/dashboard` → `/dashboard.html`.
+  `/report/:id` → `/report.html`, `/dashboard` → `/dashboard.html`. These two rewrites are NOT
+  host-conditioned, so `/dashboard` and `/report/:id` resolve on either domain — that's what makes
+  the redirect below cheap (no new pages, just routing). Two more host-conditioned **redirects**:
+  `oral.papertrailacademic.com/dashboard` → `https://app.papertrailacademic.com/dashboard`, and
+  `oral.papertrailacademic.com/report/:id` → `https://app.papertrailacademic.com/report/:id` — so
+  anyone who lands on the old `oral.*` teacher URLs (bookmarks, old links) is bounced to the
+  origin that actually shares their signed-in session.
 
 The dashboard/report pages read their data directly from Supabase under RLS
 (`auth.uid() = teacher_id` on `oral_sessions` / `oral_reports`; responses via session ownership).
@@ -69,15 +90,25 @@ Audio and export go through the two teacher edge functions, which verify ownersh
    sign-up confirmation, and password reset all redirect here).
 
 ## Required Supabase Auth config (one-time — needed for sign-in on the website)
-Supabase → Authentication → URL Configuration:
-- **Site URL**: `https://oral.papertrailacademic.com`
-- **Redirect URLs** (add all that apply): `https://oral.papertrailacademic.com/dashboard`,
-  `https://oral.papertrailacademic.com/report/*`, and the Vercel preview host
-  `https://<project>.vercel.app/dashboard`, `https://<project>.vercel.app/report/*`.
-- Google provider is already enabled (the extension uses it). For web sign-in, make sure the
+Supabase → Authentication → URL Configuration (checked 2026-07-19, already correct — nothing to
+change here):
+- **Site URL** is `https://papertrailacademic.com` (the marketing root, not `oral.*`). This is only
+  the fallback used when a `redirectTo` isn't in the allow-list below and the base URL for auth
+  emails — since every redirect this app uses is already allow-listed (see below), there's no need
+  to change it, and doing so would alter confirmation/password-reset email links for unrelated
+  flows. Leave as-is.
+- **Redirect URLs** already include `https://app.papertrailacademic.com/*` (wildcard — covers
+  `/app`, `/dashboard`, `/report/*`, anything else on that origin) plus the Vercel preview host
+  equivalents. The old `oral.papertrailacademic.com/dashboard` and `/report/*` entries can stay
+  (harmless) or be removed — `oral.*` now redirects those paths before Supabase Auth ever sees
+  them, so they're only reachable if someone bypasses the redirect (e.g. hitting the vercel.app
+  preview URL directly).
+- Google provider is already enabled (the extension uses it); Azure (Microsoft) provider is now
+  enabled too (added 2026-07-19) — see `ONEDRIVE_SETUP.md`. For any provider, make sure the
   Supabase callback (`https://ktzrdhiqhidexunucuqp.supabase.co/auth/v1/callback`) is listed as an
-  authorized redirect URI in the Google Cloud OAuth client. Without the redirect URLs above,
-  Google/password reset will bounce back to the Site URL instead of the intended page.
+  authorized redirect
+  URI in that provider's console. Without the redirect URLs above, sign-in/password reset will
+  bounce back to the Site URL instead of the intended page.
 
 Teachers who originally signed up with Google can use **Forgot password?** on the dashboard to set
 a password, or just use the Google button.
@@ -113,6 +144,7 @@ page changes.
   right extension.
 - Signed audio URLs live ~5 minutes; `report.html` loads them on demand and refreshes if stale.
 - Report-ready emails (`oral-ownership-report`) currently say "open your dashboard" with no link.
-  Once this is live, point that button at `https://oral.papertrailacademic.com/report/{id}` and
-  redeploy the edge fn (`--no-verify-jwt`). Same for the deletion-warning email in
+  Once this is live, point that button at `https://app.papertrailacademic.com/report/{id}`
+  (not `oral.*` — go straight to the shared-session origin, no need for the extra redirect hop)
+  and redeploy the edge fn (`--no-verify-jwt`). Same for the deletion-warning email in
   `oral-maintenance`.

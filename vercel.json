@@ -6,6 +6,18 @@
       "has": [{ "type": "host", "value": "app.papertrailacademic.com" }],
       "destination": "/app",
       "permanent": false
+    },
+    {
+      "source": "/dashboard",
+      "has": [{ "type": "host", "value": "oral.papertrailacademic.com" }],
+      "destination": "https://app.papertrailacademic.com/dashboard",
+      "permanent": false
+    },
+    {
+      "source": "/report/:id",
+      "has": [{ "type": "host", "value": "oral.papertrailacademic.com" }],
+      "destination": "https://app.papertrailacademic.com/report/:id",
+      "permanent": false
     }
   ],
   "rewrites": [
