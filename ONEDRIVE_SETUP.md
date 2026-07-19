@@ -130,6 +130,18 @@ treats that as a foreign tenant and refuses it. Fix:
    `common` endpoint) — a specific tenant ID there forces single-tenant behaviour too.
 3. Sign out and retry; the manifest change can take a couple minutes to propagate.
 
+**OneDrive button loops forever asking to reconnect, even right after granting consent
+each time** (as opposed to the normal ~1-hour-expiry reconnect described above): the
+`Files.Read` scope requested in `lib/onedrive-picker.js` was a bare short-form name
+(`Files.Read`). Microsoft's v2 endpoint can silently grant a token *without* that
+permission when a bare Graph scope is mixed with OIDC scopes (openid/email/profile) —
+this shows up especially with personal/consumer (MSA) accounts. The teacher approves the
+consent screen every time, but the resulting token never actually has Files.Read, so
+`hasFilesScope()`'s probe keeps failing and the button re-triggers the redirect forever.
+Fixed 2026-07-19 by fully qualifying the scope as `https://graph.microsoft.com/Files.Read`
+in `requestFilesScope()` — if this resurfaces, check that the scope string there is still
+resource-qualified and not reverted to the bare form.
+
 ## Quick test checklist
 - [ ] Microsoft button appears and doesn't error before Azure/Supabase config (shows a
       clear "provider not enabled" message, not a silent failure)
