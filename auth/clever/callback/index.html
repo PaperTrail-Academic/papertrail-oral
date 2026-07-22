@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signing you in — PaperTrail</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;1,600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --blue:#4A6FA5; --gold:#C9A84C; --ink:#1a2235; --clever:#4274F6; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',system-ui,sans-serif; color:var(--ink); background:#f7f9fc; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { background:#fff; border:1px solid #e3e8f0; border-radius:14px; padding:40px 36px; max-width:440px; width:100%; text-align:center; box-shadow:0 4px 24px rgba(26,34,53,.06); }
+  h1 { font-family:'Lora',serif; font-size:21px; font-weight:600; margin-bottom:10px; }
+  h1 em { color:var(--gold); font-style:italic; }
+  p { font-size:14px; color:#66738c; line-height:1.6; }
+  .spinner { width:34px; height:34px; border:3px solid #e3e8f0; border-top-color:var(--clever); border-radius:50%; margin:0 auto 18px; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .ok { font-size:38px; margin-bottom:12px; display:none; }
+  .err { color:#b4544a; font-weight:500; display:none; margin-top:6px; }
+  .btn { display:none; margin-top:18px; padding:12px 22px; border-radius:8px; background:var(--blue); color:#fff; font-weight:700; font-size:14px; text-decoration:none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner" id="spinner"></div>
+    <div class="ok" id="ok">✓</div>
+    <h1>PaperTrail&trade; <em>Academic</em></h1>
+    <p id="status">Completing your Clever sign-in…</p>
+    <p class="err" id="err"></p>
+    <a class="btn" id="retry" href="/app">Back to sign in</a>
+  </div>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+const SUPABASE_URL = 'https://ktzrdhiqhidexunucuqp.supabase.co'
+const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0enJkaGlxaGlkZXh1bnVjdXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MTQ2ODMsImV4cCI6MjA4ODE5MDY4M30.24Gbyh0C-wbDqQ31MD-ttXoCfLwjcWvjs9-UXAaqmHU'
+// Must EXACTLY match the redirect_uri used in the authorize request and registered in Clever.
+const REDIRECT_URI = 'https://app.papertrailacademic.com/auth/clever/callback/'
+// Same default storage key as app.html's client (no custom storageKey there), so setSession()
+// here persists the session app.html reads on /app. detectSessionInUrl:false — we handle ?code ourselves.
+const supabase = createClient(SUPABASE_URL, ANON, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+})
+
+const $ = (id) => document.getElementById(id)
+function fail(msg) {
+  $('spinner').style.display = 'none'
+  $('status').style.display = 'none'
+  $('err').textContent = msg
+  $('err').style.display = 'block'
+  $('retry').style.display = 'inline-block'
+}
+
+const qs = new URLSearchParams(location.search)
+const code = qs.get('code'), oerr = qs.get('error'), returnedState = qs.get('state')
+let expected = null
+try { expected = sessionStorage.getItem('pt_clever_state'); sessionStorage.removeItem('pt_clever_state') } catch (_) {}
+
+if (oerr) {
+  fail(oerr === 'unauthorized-user'
+    ? 'Your Clever account is not shared with PaperTrail. A teacher can add it from the Clever Library.'
+    : 'Clever sign-in was cancelled or denied.')
+} else if (!code) {
+  fail('No sign-in code found. Please start again from the sign-in page.')
+} else if (expected && returnedState !== expected) {
+  fail('Sign-in could not be verified (state mismatch). Please start again.')
+} else {
+  // Strip the single-use code immediately (60 s TTL, must never be exchanged twice).
+  try { history.replaceState(null, '', location.pathname) } catch (_) {}
+  fetch(SUPABASE_URL + '/functions/v1/clever-auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': ANON, 'Authorization': 'Bearer ' + ANON },
+    body: JSON.stringify({ code: code, redirect_uri: REDIRECT_URI })
+  })
+  .then((r) => r.json().then((d) => ({ ok: r.ok, d: d })))
+  .then(async ({ ok, d }) => {
+    if (!ok || !d.ok) { fail(d && d.error ? d.error : 'Sign-in failed. Please try again.'); return }
+    const { error: se } = await supabase.auth.setSession({
+      access_token: d.session.access_token,
+      refresh_token: d.session.refresh_token
+    })
+    if (se) { fail('Could not establish your session. Please try again.'); return }
+    $('spinner').style.display = 'none'
+    $('ok').style.display = 'block'
+    $('status').textContent = 'Signed in as ' + ((d.user && d.user.email) || 'your Clever account') + '. Taking you to PaperTrail…'
+    location.replace('/app')
+  })
+  .catch(() => fail('Network error during sign-in. Please check your connection and try again.'))
+}
+</script>
+</body>
+</html>
